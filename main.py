@@ -1,6 +1,6 @@
 import streamlit as st
 from utils import spacer
-
+# from transcendental_epsilon_mi_opt import *
 
 # 1. Oksidator/gorivo: tečni kiseonik / hidrazin
 # 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
@@ -23,7 +23,7 @@ def main():
     OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=5.0)
     st.markdown('***')
     P = st.number_input('(2) Pritisak u komori (P)', value=100.0 * (10**5))
-    Pa = st.number_input('(3) Atmosferski pritisak (Pa)', value=101325.0)
+    Pa = st.number_input('(3) Atmosferski pritisak (Pa)', value=101325)
     F = st.number_input('(4) Sila potiska', value = 2200)
     epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=6.0)
     d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=3)
@@ -81,10 +81,20 @@ def main():
   st.markdown(f'$ d_{{i}} = \\sqrt{{\\frac{{{Ai:.3f} \\cdot 4}}{{\\pi}}}} = {di:.3f} \\, \\text{{m}} $')
 
   # 6. Determining Mach number at nozzle exit
-  st.header("TODO M_iter")
+  st.write('Odredjivanje Mahovog broja na izlazu mlaznika')
+  st.subheader("TODO M_iter")
+  
+  st.markdown(r'''
+      $ \epsilon_{i opt} = \frac{
+      \left(1 + \frac{\kappa - 1}{2} \cdot M_{iter}^2\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
+      }{
+      M_{iter} \left(\frac{\kappa + 1}{2}\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
+      } $
+  ''')
 
   # 7. Staticki pritisak na izlazu iz mlaznika
-  M_i = 2.917
+  M_i = st.number_input("M_i value", value=2.917)
+  
   pi = P / ((1 + (kappa - 1) / 2 * M_i**2)**(kappa / (kappa - 1)))
   st.write('7. Statički pritisak na izlazu iz mlaznika:')
   st.markdown(r'''
@@ -113,11 +123,11 @@ def main():
   e_i_opt = (1 + (kappa - 1)/2 * Mi_opt**2)**((kappa + 1)/(2 * (kappa - 1))) / Mi_opt / ((kappa + 1)/2)**((kappa + 1)/(2 * (kappa - 1)))
   st.write('9. Optimalni ekspanzioni odnos:')
   st.markdown(r'''
-      $$ \epsilon_{i opt} = \frac{
+      $ \epsilon_{i opt} = \frac{
       \left(1 + \frac{\kappa - 1}{2} \cdot M_{i opt}^2\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
       }{
       M_{i opt} \left(\frac{\kappa + 1}{2}\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
-      } $$
+      } $
   ''')
   st.markdown(f'''
       $ \epsilon_{{i opt}} = \\frac{{
