@@ -2,19 +2,50 @@ import streamlit as st
 from utils import spacer
 # from transcendental_epsilon_mi_opt import *
 
-# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
-# 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
-# 3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
-# 4. Sila potiska: 𝐹 = 2200 𝑑𝑎𝑁
-# 5. Stepen širenja: 𝜀 = 7
-# 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
-# 7. Karakteristična dužina L*=1m
 
 def main():
 
   # Title for the section
   st.header("🚀 Tečni kiseonik / hidrazin")
   st.write('Na osnovu definisanih ulaznih parametara potrebno je da se odrede performanse idealnog raketnog motora na tečno gorivo: specifični impuls, karakteristična brzina, koeficijent potiska, kao i preliminarna geometrija komore i mlaznika. Proračun uraditi za odnos mešanja koji odgovaraja maksimalnom specifičnom impulsu pomoću programa RPA, a zatim ručno izračunati iste vrednosti koristeći vrednosti karakteristične brzine i osobina produkata sagorevanja iz programa.')
+  st.code('''# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
+# 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
+# 3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
+# 4. Sila potiska: 𝐹 = 2200 𝑑𝑎𝑁
+# 5. Stepen širenja: 𝜀 = 7
+# 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
+# 7. Karakteristična dužina L*=1m''')
+  
+  st.code("""Thrust and mass flow rates
+------------------------------------------
+   Chamber thrust (vac):    2.20527     kN
+ Specific impulse (vac):  322.35846      s
+   Chamber thrust (opt):    2.01819     kN
+ Specific impulse (opt):  295.01135      s
+   Total mass flow rate:    0.69759   kg/s
+Oxidizer mass flow rate:    0.32225   kg/s
+    Fuel mass flow rate:    0.37535   kg/s
+
+Geometry of thrust chamber with parabolic nozzle
+------------------------------------------
+    Dc =    7.98  mm       b =   30.00 deg
+    R2 =    8.00  mm      R1 =    2.31  mm
+    L* = 1000.00  mm
+    Lc =  151.46  mm    Lcyl =  144.45  mm
+    Dt =    3.08  mm
+    Rn =    0.59  mm      Tn =   22.16 deg
+    Le =    9.82  mm      Te =    8.00 deg
+    De =    8.14  mm
+ Ae/At =    7.00    
+ Le/Dt =    3.19    
+Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
+
+  Mass =   35.13  kg
+
+  Divergence efficiency:    0.99157       
+        Drag efficiency:    0.96223       
+     Thrust coefficient:    1.65491  (vac)
+""")
 
   with st.sidebar:
   # Inputs for the variables
