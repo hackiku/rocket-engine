@@ -136,24 +136,20 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         M_{iter} \left(\frac{\kappa + 1}{2}\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
         } $
     ''')
+    
+    # fsolve
+    def equation(Mi, kappa, epsilon_i):
+        epsilon_i_opt_numerator = (1 + (kappa - 1) / 2 * Mi**2)**((kappa + 1) / (2 * (kappa - 1)))
+        epsilon_i_opt_denominator = Mi * ((kappa + 1) / 2)**((kappa + 1) / (2 * (kappa - 1)))
+        return epsilon_i_opt_numerator / epsilon_i_opt_denominator - epsilon_i
 
-    # Define the function to find the root
-    def equation(Mi, *data):
-        k, M_iter = data
-        return ((1 + (k - 1) / 2 * Mi**2)**((k + 1) / (2 * (k - 1)))) - (M_iter * ((k + 1) / 2)**((k + 1) / (2 * (k - 1))))
+    Mi_guess = 28
 
-    M_iter = 2.8
-    k = 1.2
+    Mi_solution = fsolve(equation, Mi_guess, args=(kappa, epsilon_i))
 
-    Mi_guess = 2.0
-
-    Mi_solution = fsolve(equation, Mi_guess, args=(k, M_iter))
-
+    # Output the result - Mi value
     st.code(f"The solution for Mi is: {Mi_solution[0]}")
-
-
-    # 7. Staticki pritisak na izlazu iz mlaznika
-    M_i = st.number_input("M_i value", value=2.917)
+    M_i = st.number_input("M_i value", value=Mi_solution[0], step=1.00)
 
     pi = P / ((1 + (kappa - 1) / 2 * M_i**2)**(kappa / (kappa - 1)))
     st.code('7. Statički pritisak na izlazu iz mlaznika:')
@@ -163,7 +159,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         } $
     ''')
     st.markdown(f'''
-    $ p_i = \\frac{{{P:.2e}}}{{\\left(1 + \\frac{{{kappa} - 1}}{{2}} \cdot {M_i:.2f}^2\\right)^{{\\frac{{{kappa}}}{{{kappa} - 1}}}}}} = {pi:.3f} \\, \\text{{Pa}} $
+    $ p_i = \\frac{{{P:.2e}}}{{\\left(1 + \\frac{{{kappa} - 1}}{{2}} \cdot {M_i:.3f}^2\\right)^{{\\frac{{{kappa}}}{{{kappa} - 1}}}}}} = {pi:.3f} \\, \\text{{Pa}} $
     ''')
 
     spacer()
@@ -172,7 +168,6 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     Mi_opt = (((P/Pa)**((kappa - 1)/kappa) - 1) * (2/(kappa - 1)))**0.5
 
     st.code('8. Optimalni stepen sirenja mlaznika (do atmosferskog P od 1 bar)')
-    st.code('i njemu odgovarajuci izlazni precnik')
     st.markdown(r'''
     $$ M_{i \text{ opt}} = \sqrt{\left[\left(\frac{P}{P_a}\right)^{\frac{\kappa - 1}{\kappa}} - 1\right] \cdot \frac{2}{\kappa - 1}} $$
     ''')
@@ -210,6 +205,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # Calculate optimal nozzle exit diameter
+    st.code('izlazni precnik')
     diopt = (Aiopt * 4 / 3.14159)**0.5
     st.markdown(r'''
     $$ d_{iopt} = \sqrt{A_{iopt} \cdot \frac{4}{\pi}} $$
@@ -252,7 +248,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
 
     Vi_opt = (2*kappa/(kappa-1) * R * T * (1 - 1/((P/Pa)**((kappa-1)/kappa))))**0.5
     st.markdown(r'''
-        $$ V_{iopt} = \sqrt{ \frac{2 \kappa}{\kappa - 1} \cdot R \cdot T \cdot \left[ 1 - \frac{1}{\left(\frac{P}{p_i}\right)^{\frac{\kappa - 1}{\kappa}}} \right] } $$
+        $$ V_{iopt} = \sqrt{ \frac{2 \kappa}{\kappa - 1} \cdot R \cdot T \cdot \left[ 1 - \frac{1}{\left(\frac{P}{p_a}\right)^{\frac{\kappa - 1}{\kappa}}} \right] } $$
     ''')
     st.markdown(f'''
         $ V_{{iopt}} = \sqrt{{ \\frac{{2 \cdot {kappa}}}{{ {kappa} - 1 }} \cdot {R} \cdot {T:.3f} \cdot \\left[ 1 - \\frac{{1}}{{\\left(\\frac{{ {P} }}{{ {Pa:.3f} }}\\right)^{{\\frac{{ {kappa} - 1 }}{{ {kappa} }}}}}} \\right] }}  = {Vi_opt:.3f} \\, \\text{{m/s}} $
@@ -297,7 +293,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         $$ I_{sp} = \frac{F}{(m_{ox} + m_{g})} $$
     ''')
     st.markdown(f'''
-        $ I_{{sp}} = \\frac{{ {F:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp:.3f} \\, \\text{{s}} $
+        $ I_{{sp}} = \\frac{{ {F:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp:.3f} \\, \\text{{Ns/Kg}} $
     ''')
     spacer()
 
