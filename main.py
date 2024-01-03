@@ -1,5 +1,8 @@
 import streamlit as st
 from utils import spacer
+from scipy.optimize import fsolve
+import numpy as np
+
 # from transcendental_epsilon_mi_opt import *
 
 
@@ -47,48 +50,57 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
      Thrust coefficient:    1.65491  (vac)
 """)
 
+    col1, col2 = st.columns(2)
+    with col1:
+        st.success('Isp = 322.35846 s')
+        st.success('cf = 1.65491')
+    with col2:
+        st.success('C* = 2000 m/s')
+    
     with st.sidebar:
         # Inputs for the variables
         st.title("Ulazni podaci")
         mg = st.number_input('Maseni protok goriva (mg)', value=1.0)
-        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=5.0)
+        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=5.0, step=1.0)
+        # propellant.components.ratio.value = 5.9
         st.markdown('***')
         P = st.number_input('(2) Pritisak u komori (P)', value=100.0 * (10**5))
         Pa = st.number_input('(3) Atmosferski pritisak (Pa)', value=101325)
         F = st.number_input('(4) Sila potiska', value = 2200)
         epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=6.0)
         d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=2.5)
-        Lkar = st.number_input('(7) Karakteristicna duzina (Lkar)', value=1.0)
-        st.subheader('vrednosti is RPA')  
-        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=2000.0)
-        R = st.number_input('Gasna konstanta (R)', value=546.0)
+        Lstar = st.number_input('(7) Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
+        st.subheader('vrednosti is RPA')
+        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=2000.0, step=100.0)
+        R = st.number_input('Gasna konstanta (R)', value=546.0, step=1.0)
         kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2)
 
     #--------------calculations-------------------------#
 
     st.title('Calculations')
-    # 1. Maseni protok oksidatora
+    # mox
     mox = OF * mg
     st.code('1. Maseni protok oksidatora:')
     st.markdown('$m_{ox} = OF \cdot mg$')
-    st.markdown(f'$ m_{{ox}} = {OF:.3f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
+    st.markdown(f'$ m_{{ox}} = {OF:.0f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
     spacer()
 
-    # 2. Kriticni presek i precnik mlaznika
+    # Akr
     Akr = Cstar * (mg + mox) / P
     dkr = (Akr * 4 / 3.14159)**0.5
     st.code('2. Kriticni presek i precnik mlaznika:')
     st.markdown('$A_{kr} = \\frac{C_{star} \cdot (mg + m_{ox})}{P}$')
     st.markdown(f'$ A_{{kr}} = \\frac{{ {Cstar:.3f} \, \cdot \, ({mg:.3f} + {mox:.3f}) }}{{ {P:.3f} }} = {Akr:.3f} \\, m^2 $')
+    spacer('2em')
     st.markdown('$d_{kr} = \\sqrt{A_{kr} \cdot \\frac{4}{\\pi}}$')
     st.markdown(f'$ d_{{kr}} = \\sqrt{{{Akr:.3f} \cdot \\frac{{4}}{{\\pi}}}} = {dkr:.3f} \\, \\text{{m}} $', unsafe_allow_html=True)
     spacer()
 
-    # 3. Zapremina komore
-    Vkom = Lkar * Akr
+    # Vkom
+    Vkom = Lstar * Akr
     st.code('3. Zapremina komore:')
     st.markdown('$V_{kom} = L_{kar} \cdot A_{kr}$')
-    st.markdown(f'$ V_{{kom}} = {Lkar:.3f} \, \cdot \, {Akr:.3f} = {Vkom:.3f} \\, m^3 $')
+    st.markdown(f'$ V_{{kom}} = {Lstar:.3f} \, \cdot \, {Akr:.3f} = {Vkom:.3f} \\, m^3 $')
     spacer()
 
     # 4. Chamber Diameter and Length
@@ -112,9 +124,10 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     st.markdown('$d_{i} = \\sqrt{\\frac{A_{i} \cdot 4}{\\pi}}$')
     st.markdown(f'$ d_{{i}} = \\sqrt{{\\frac{{{Ai:.3f} \\cdot 4}}{{\\pi}}}} = {di:.3f} \\, \\text{{m}} $')
 
-    # 6. Determining Mach number at nozzle exit
-    st.write('Odredjivanje Mahovog broja na izlazu mlaznika')
-    st.subheader("TODO M_iter")
+    # -----------------fsolve---------------------#
+    # mach
+    st.markdown('***') 
+    st.code('Odredjivanje Mahovog broja na izlazu mlaznika')
 
     st.markdown(r'''
         $ \epsilon_{i opt} = \frac{
@@ -123,6 +136,21 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         M_{iter} \left(\frac{\kappa + 1}{2}\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
         } $
     ''')
+
+    # Define the function to find the root
+    def equation(Mi, *data):
+        k, M_iter = data
+        return ((1 + (k - 1) / 2 * Mi**2)**((k + 1) / (2 * (k - 1)))) - (M_iter * ((k + 1) / 2)**((k + 1) / (2 * (k - 1))))
+
+    M_iter = 2.8
+    k = 1.2
+
+    Mi_guess = 2.0
+
+    Mi_solution = fsolve(equation, Mi_guess, args=(k, M_iter))
+
+    st.code(f"The solution for Mi is: {Mi_solution[0]}")
+
 
     # 7. Staticki pritisak na izlazu iz mlaznika
     M_i = st.number_input("M_i value", value=2.917)
@@ -154,7 +182,6 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
 
     # 9. Calculate the optimal expansion ratio (e_i opt)
     e_i_opt = (1 + (kappa - 1)/2 * Mi_opt**2)**((kappa + 1)/(2 * (kappa - 1))) / Mi_opt / ((kappa + 1)/2)**((kappa + 1)/(2 * (kappa - 1)))
-    st.code('9. Optimalni stepen sirenja:')
     st.markdown(r'''
     $ \epsilon_{i opt} = \frac{
     \left(1 + \frac{\kappa - 1}{2} \cdot M_{i opt}^2\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
@@ -174,7 +201,6 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
 
     # Calculate optimal nozzle exit area
     Aiopt = e_i_opt * Akr
-    st.code('9. Optimalni stepen sirenja:')
     st.markdown(r'''
     $$ A_{opt} = \epsilon_{i opt} \cdot A_{kr} $$
     ''')
@@ -185,7 +211,6 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
 
     # Calculate optimal nozzle exit diameter
     diopt = (Aiopt * 4 / 3.14159)**0.5
-    st.write('Optimal Nozzle Exit Diameter:')
     st.markdown(r'''
     $$ d_{iopt} = \sqrt{A_{iopt} \cdot \frac{4}{\pi}} $$
     ''')
@@ -195,7 +220,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # Calculation of the temperature function Gamma(kappa)
-    st.write('Totalna temperatura u komori:')
+    st.code('9. Totalna temperatura u komori')
     st.markdown(r'''
     $$ \Gamma(\kappa) = \sqrt{\kappa} \left( \frac{2}{\kappa + 1} \right)^{\frac{\kappa + 1}{2(\kappa - 1)}} $$
     ''')
@@ -216,7 +241,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # brzina isticanja pri zadanom i optimalnom stepenu sirenja
-    st.write("Brzina isticanja pri zadanom i optimalnom stepenu sirenja")
+    st.code("10. Brzina isticanja pri zadanom i optimalnom stepenu sirenja")
     Vi = (2*kappa/(kappa-1) * R * T * (1 - 1/((P/pi)**((kappa-1)/kappa))))**0.5
     st.markdown(r'''
         $$ V_i = \sqrt{ \frac{2 \kappa}{\kappa - 1} \cdot R \cdot T \cdot \left[ 1 - \frac{1}{\left(\frac{P}{p_i}\right)^{\frac{\kappa - 1}{\kappa}}} \right] } $$
@@ -234,7 +259,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     ''')
 
     # Thrust at given expansion ratio
-    st.write('Potisak pri zadanom stepenu sirenja:')
+    st.code('11. Potisak pri zadanom stepenu sirenja')
     F = (mox + mg) * Vi + Ai * (pi - Pa)
     st.markdown(r'''
         $$ F = (m_{ox} + m_{g}) \cdot V_{i} + A_{i} \cdot (p_{i} - p_{a}) $$
@@ -245,7 +270,6 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # Thrust at optimal expansion ratio
-    st.write('Potisak pri optimalnom stepenu sirenja:')
     Fopt = (mox + mg) * Vi_opt
     st.markdown(r'''
         $$ F_{opt} = (m_{ox} + m_{g}) \cdot V_{iopt} $$
@@ -256,7 +280,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # Thrust Coefficient
-    st.write('Koeficijent potiska:')
+    st.code('12. Koeficijent potiska')
     Cf = F / (P * Akr)
     st.markdown(r'''
         $$ C_f = \frac{F}{P \cdot A_{kr}} $$
@@ -267,7 +291,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # Specific Impulse at Given Expansion Ratio
-    st.write('Specifični impuls pri zadanom stepenu sirenja:')
+    st.write('13. Specifični impuls pri zadanom stepenu sirenja')
     Isp = F / (mox + mg)
     st.markdown(r'''
         $$ I_{sp} = \frac{F}{(m_{ox} + m_{g})} $$
@@ -284,7 +308,7 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         $$ I_{sp_{opt}} = \frac{F_{opt}}{(m_{ox} + m_{g})} $$
     ''')
     st.markdown(f'''
-        $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{s}} $
+        $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}} $
     ''')
     spacer()
 
