@@ -64,8 +64,16 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=5.0, step=1.0)
         # propellant.components.ratio.value = 5.9
         st.markdown('***')
-        P = st.number_input('(2) Pritisak u komori (P)', value=100.0 * (10**5))
-        Pa = st.number_input('(3) Atmosferski pritisak (Pa)', value=101325)
+        
+        Pa_atm = st.number_input('2️⃣ Atmosferski pritisak (atm)', value=1)
+        Pa = Pa_atm * 101325
+        st.text(f'P = {Pa} = {Pa:.1e} Pa')
+        P_bar = st.number_input('3️⃣ Pritisak u komori (bar)', value=110)
+        P = P_bar * 100000
+        st.text(f'P = {P} Pa = {P:.1e} Pa')  # Display chamber pressure in Pascals with both formats
+
+            
+        
         F = st.number_input('(4) Sila potiska', value = 2200)
         epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=6.0)
         d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=2.5)
@@ -74,7 +82,6 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=2000.0, step=100.0)
         R = st.number_input('Gasna konstanta (R)', value=546.0, step=1.0)
         kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2)
-
     #--------------calculations-------------------------#
 
     st.title('Calculations')
