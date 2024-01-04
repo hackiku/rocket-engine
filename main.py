@@ -2,15 +2,18 @@ import streamlit as st
 from utils import spacer
 from scipy.optimize import fsolve
 import numpy as np
-
+import re
 # from transcendental_epsilon_mi_opt import *
 
 
 def main():
 
-    # Title for the section
+    # Title for the section   
+    st.title("Raketni motori")
     st.header("🚀 Tečni kiseonik / hidrazin")
     st.write('Na osnovu definisanih ulaznih parametara potrebno je da se odrede performanse idealnog raketnog motora na tečno gorivo: specifični impuls, karakteristična brzina, koeficijent potiska, kao i preliminarna geometrija komore i mlaznika. Proračun uraditi za odnos mešanja koji odgovaraja maksimalnom specifičnom impulsu pomoću programa RPA, a zatim ručno izračunati iste vrednosti koristeći vrednosti karakteristične brzine i osobina produkata sagorevanja iz programa.')
+
+    
     st.code('''# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
 # 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
 # 3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
@@ -19,48 +22,78 @@ def main():
 # 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
 # 7. Karakteristična dužina L*=1m''')
   
-    st.code("""Thrust and mass flow rates
+    rpa_response = """Thrust and mass flow rates
 ------------------------------------------
-   Chamber thrust (vac):    2.20527     kN
- Specific impulse (vac):  322.35846      s
-   Chamber thrust (opt):    2.01819     kN
- Specific impulse (opt):  295.01135      s
-   Total mass flow rate:    0.69759   kg/s
-Oxidizer mass flow rate:    0.32225   kg/s
-    Fuel mass flow rate:    0.37535   kg/s
+   Chamber thrust (vac):   22.53030     kN
+ Specific impulse (vac):  321.23033      s
+   Chamber thrust (opt):   20.47012     kN
+ Specific impulse (opt):  291.85683      s
+   Total mass flow rate:    7.15204   kg/s
+Oxidizer mass flow rate:    4.14013   kg/s
+    Fuel mass flow rate:    3.01191   kg/s
 
-Geometry of thrust chamber with parabolic nozzle
+Geometry of thrust chamber with truncated ideal contour (TIC) nozzle
+(designed using method of characteristics)
 ------------------------------------------
-    Dc =    7.98  mm       b =   30.00 deg
-    R2 =    8.00  mm      R1 =    2.31  mm
+    Dc =   80.02  mm       b =   30.00 deg
+    R2 =   14.67  mm      R1 =    0.36  mm
     L* = 1000.00  mm
-    Lc =  151.46  mm    Lcyl =  144.45  mm
-    Dt =    3.08  mm
-    Rn =    0.59  mm      Tn =   22.16 deg
-    Le =    9.82  mm      Te =    8.00 deg
-    De =    8.14  mm
+    Lc =  169.87  mm    Lcyl =  123.29  mm
+    Dt =   30.88  mm
+    Rn =   11.80  mm      Tn =   21.08 deg (max)
+    Le =  100.66  mm      Te =    6.17 deg
+    De =   81.71  mm
  Ae/At =    7.00    
- Le/Dt =    3.19    
-Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
+ Le/Dt =    3.26    
+Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
 
-  Mass =   35.13  kg
+  Mass =    9.91  kg
 
-  Divergence efficiency:    0.99157       
-        Drag efficiency:    0.96223       
-     Thrust coefficient:    1.65491  (vac)
-""")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.success('Isp = 322.35846 s')
-        st.success('cf = 1.65491')
-    with col2:
-        st.success('C* = 2000 m/s')
+                  Tw/T0:    0.20000       
+  Divergence efficiency:    1.00000       
+        Drag efficiency:    0.97848       
+     Thrust coefficient:    1.67237  (vac)
+"""
+    st.code(rpa_response)
     
+    isp_regex = r"Specific impulse \(vac\):\s+([\d.]+)\s+s"
+    cf_regex = r"Thrust coefficient:\s+([\d.]+)\s+"
+    thrust_vac_regex = r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN"
+    isp_opt_regex = r"Specific impulse \(opt\):\s+([\d.]+)\s+s"
+    ox_flow_rate_regex = r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s"
+    fuel_flow_rate_regex = r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s"
+
+    # Find Isp, Cf, Chamber thrust (vac), Optimal Isp, Oxidizer and Fuel flow rates in the data block
+    isp_match = re.search(isp_regex, rpa_response)
+    cf_match = re.search(cf_regex, rpa_response)
+    thrust_vac_match = re.search(thrust_vac_regex, rpa_response)
+    isp_opt_match = re.search(isp_opt_regex, rpa_response)
+    ox_flow_rate_match = re.search(ox_flow_rate_regex, rpa_response)
+    fuel_flow_rate_match = re.search(fuel_flow_rate_regex, rpa_response)
+
+    # Extract the matched values and print them
+    if isp_match and cf_match and thrust_vac_match and isp_opt_match and ox_flow_rate_match and fuel_flow_rate_match:
+        isp = isp_match.group(1)
+        cf = cf_match.group(1)
+        thrust_vac = thrust_vac_match.group(1)
+        isp_opt = isp_opt_match.group(1)
+        ox_flow_rate = ox_flow_rate_match.group(1)
+        fuel_flow_rate = fuel_flow_rate_match.group(1)
+        fuel_flow_rate = float(fuel_flow_rate)
+        st.text(f"Isp (vac) = {isp} s")
+        st.text(f"Cf (vac) = {cf}")
+        st.text(f"Chamber Thrust (vac) = {thrust_vac} kN")
+        st.success(f"Specific Impulse (opt) = {isp_opt} s")
+        st.text(f"Oxidizer Mass Flow Rate = {ox_flow_rate} kg/s")
+        st.text(f"Fuel Mass Flow Rate = {fuel_flow_rate} kg/s")
+    else:
+        st.text("Could not find all the values in the data block.")
+
+    # st.text(f"C* = {float(isp) * 9.80665:.1f} m/s")
     with st.sidebar:
         # Inputs for the variables
         st.title("Ulazni podaci")
-        mg = st.number_input('Maseni protok goriva (mg)', value=1.0)
+        mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate) 
         OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=5.0, step=1.0)
         # propellant.components.ratio.value = 5.9
         st.markdown('***')
@@ -68,25 +101,27 @@ Le/c15  =  103.08 % (relative to length of cone nozzle with Te=15 deg)
         Pa_atm = st.number_input('2️⃣ Atmosferski pritisak (atm)', value=1)
         Pa = Pa_atm * 101325
         st.text(f'P = {Pa} = {Pa:.1e} Pa')
-        P_bar = st.number_input('3️⃣ Pritisak u komori (bar)', value=110)
+        P_bar = st.number_input('3️⃣ Pritisak u komori (bar)', value=180)
         P = P_bar * 100000
         st.text(f'P = {P} Pa = {P:.1e} Pa')  # Display chamber pressure in Pascals with both formats
 
-            
-        
-        F = st.number_input('(4) Sila potiska', value = 2200)
-        epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=6.0)
-        d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=2.5)
+        F = st.number_input('(4) Sila potiska kN', value = 22)
+        epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=7.0)
+        d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=3.0)
         Lstar = st.number_input('(7) Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
-        st.subheader('vrednosti is RPA')
+        # st.markdown('***')
+        st.code('vrednosti iz RPA')
         Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=2000.0, step=100.0)
         R = st.number_input('Gasna konstanta (R)', value=546.0, step=1.0)
         kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2)
+    
+    
     #--------------calculations-------------------------#
-
     st.title('Calculations')
+
     # mox
-    mox = OF * mg
+    # mox = OF * mg
+    mox = 4.14013
     st.code('1. Maseni protok oksidatora:')
     st.markdown('$m_{ox} = OF \cdot mg$')
     st.markdown(f'$ m_{{ox}} = {OF:.0f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
