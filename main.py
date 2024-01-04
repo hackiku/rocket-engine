@@ -5,6 +5,27 @@ import numpy as np
 import re
 # from transcendental_epsilon_mi_opt import *
 
+def extract_values(rpa_response):
+    patterns = {
+        'isp': r"Specific impulse \(vac\):\s+([\d.]+)\s+s",
+        'cf': r"Thrust coefficient:\s+([\d.]+)\s+",
+        'thrust_vac': r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN",
+        'isp_opt': r"Specific impulse \(opt\):\s+([\d.]+)\s+s",
+        'ox_flow_rate': r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s",
+        'fuel_flow_rate': r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s"
+    }
+
+    values = {}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, rpa_response)
+        if match:
+            values[key] = float(match.group(1))
+        else:
+            st.error(f"Could not find the value for {key.replace('_', ' ').title()}.")
+            return None
+
+    return values
+
 
 def main():
 
@@ -56,45 +77,35 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
 """
     st.code(rpa_response)
     
-    isp_regex = r"Specific impulse \(vac\):\s+([\d.]+)\s+s"
-    cf_regex = r"Thrust coefficient:\s+([\d.]+)\s+"
-    thrust_vac_regex = r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN"
-    isp_opt_regex = r"Specific impulse \(opt\):\s+([\d.]+)\s+s"
-    ox_flow_rate_regex = r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s"
-    fuel_flow_rate_regex = r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s"
+    values = extract_values(rpa_response)
 
-    # Find Isp, Cf, Chamber thrust (vac), Optimal Isp, Oxidizer and Fuel flow rates in the data block
-    isp_match = re.search(isp_regex, rpa_response)
-    cf_match = re.search(cf_regex, rpa_response)
-    thrust_vac_match = re.search(thrust_vac_regex, rpa_response)
-    isp_opt_match = re.search(isp_opt_regex, rpa_response)
-    ox_flow_rate_match = re.search(ox_flow_rate_regex, rpa_response)
-    fuel_flow_rate_match = re.search(fuel_flow_rate_regex, rpa_response)
-
-    # Extract the matched values and print them
-    if isp_match and cf_match and thrust_vac_match and isp_opt_match and ox_flow_rate_match and fuel_flow_rate_match:
-        isp = isp_match.group(1)
-        cf = cf_match.group(1)
-        thrust_vac = thrust_vac_match.group(1)
-        isp_opt = isp_opt_match.group(1)
-        ox_flow_rate = ox_flow_rate_match.group(1)
-        fuel_flow_rate = fuel_flow_rate_match.group(1)
-        fuel_flow_rate = float(fuel_flow_rate)
+    if values:
+        isp = values['isp']
+        cf = values['cf']
+        thrust_vac = values['thrust_vac']
+        isp_opt = values['isp_opt']
+        ox_flow_rate = values['ox_flow_rate']
+        fuel_flow_rate = values['fuel_flow_rate']
+        
+        # Now you can use these variables in your code
         st.text(f"Isp (vac) = {isp} s")
         st.text(f"Cf (vac) = {cf}")
         st.text(f"Chamber Thrust (vac) = {thrust_vac} kN")
-        st.success(f"Specific Impulse (opt) = {isp_opt} s")
+        st.text(f"Specific Impulse (opt) = {isp_opt} s")
         st.text(f"Oxidizer Mass Flow Rate = {ox_flow_rate} kg/s")
         st.text(f"Fuel Mass Flow Rate = {fuel_flow_rate} kg/s")
-    else:
-        st.text("Could not find all the values in the data block.")
-
-    # st.text(f"C* = {float(isp) * 9.80665:.1f} m/s")
+    
+    Cstar_rpa = (thrust_vac * 1000) / ((ox_flow_rate + fuel_flow_rate) * cf)
+    st.success(f"Cstar (vac) = {Cstar_rpa:.0f} m/s")
+    of_rpa = ox_flow_rate / fuel_flow_rate
+    st.write(f"OF = {of_rpa:.3f}")
+    
     with st.sidebar:
         # Inputs for the variables
         st.title("Ulazni podaci")
-        mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate) 
-        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=5.0, step=1.0)
+        mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate, step=1.0) 
+        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=of_rpa, step=1.0)
+        mox = st.number_input('Maseni protok oksidatora (mox)', value=ox_flow_rate, step=1.0)
         # propellant.components.ratio.value = 5.9
         st.markdown('***')
         
@@ -111,9 +122,9 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         Lstar = st.number_input('(7) Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
         # st.markdown('***')
         st.code('vrednosti iz RPA')
-        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=2000.0, step=100.0)
-        R = st.number_input('Gasna konstanta (R)', value=546.0, step=1.0)
-        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2)
+        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
+        R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
+        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
     
     
     #--------------calculations-------------------------#
@@ -349,6 +360,16 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}} $
     ''')
     spacer()
+
+    st.markdown(f"""| Parameter                      | Raw RPA Value    | RPA Value         | Calculated Value   |
+|--------------------------------|------------------|-------------------|--------------------|
+| Specific Impulse (Vac)         | `321.23033 s`    | `{isp} s`         | `{Isp/9.80665} Ns/Kg`       |
+| Thrust Coefficient (Vac)       | `1.67237`        | `{cf}`            | `{Cf}`          |
+| Chamber Thrust (Vac)           | `22.53030 kN`    | `{thrust_vac} kN` | `{F} kN`|
+| Specific Impulse (Opt)         | `291.85683 s`    | `{isp_opt} s`     | `{Isp_opt/9.80665} s`   |
+| Oxidizer/Fuel Ratio (OF)       | `{of_rpa:.3f}`   | `{OF}`            | `{OF}`          |
+
+""", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
