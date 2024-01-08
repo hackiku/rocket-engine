@@ -1,10 +1,9 @@
 import streamlit as st
 from utils import spacer
 from scipy.optimize import fsolve
-import numpy as np
 import re
-# from transcendental_epsilon_mi_opt import *
 
+# regex pattern for extracting values from RPA response
 def extract_values(rpa_response):
     patterns = {
         'isp': r"Specific impulse \(vac\):\s+([\d.]+)\s+s",
@@ -25,6 +24,7 @@ def extract_values(rpa_response):
             return None
 
     return values
+
 
 
 def main():
@@ -157,6 +157,7 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     spacer()
 
     # 4. Chamber Diameter and Length
+    d_dkdr = 80.02 / 30.88
     dk = dkr * d_dkdr
     lk = Vkom / (dk**2 * 3.14159 / 4)
     st.code('4. Precnik i duzina komore')
@@ -361,7 +362,7 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     ''')
     spacer()
 
-    st.markdown(f"""| Parameter                      | Raw RPA Value    | RPA Value         | Calculated Value   |
+    st.markdown(f"""| Parameter                      | Raw RPA regex    | RPA Value         | Calculated Value   |
 |--------------------------------|------------------|-------------------|--------------------|
 | Specific Impulse (Vac)         | `321.23033 s`    | `{isp} s`         | `{Isp/9.80665} Ns/Kg`       |
 | Thrust Coefficient (Vac)       | `1.67237`        | `{cf}`            | `{Cf}`          |
