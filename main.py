@@ -29,11 +29,20 @@ def extract_values(rpa_response):
 
 def main():
 
-    # Title for the section   
-    st.title("Raketni motori")
-    st.header("🚀 Tečni kiseonik / hidrazin")
+    # intro
+    st.image('./assets/Logo_masinski_fakultet.jpg', width=100)
+    st.title("Raketni motori: seminarski rad")
+    st.subheader("Ivan Karaman, 1186/23")
+    spacer()
     st.write('Na osnovu definisanih ulaznih parametara potrebno je da se odrede performanse idealnog raketnog motora na tečno gorivo: specifični impuls, karakteristična brzina, koeficijent potiska, kao i preliminarna geometrija komore i mlaznika. Proračun uraditi za odnos mešanja koji odgovaraja maksimalnom specifičnom impulsu pomoću programa RPA, a zatim ručno izračunati iste vrednosti koristeći vrednosti karakteristične brzine i osobina produkata sagorevanja iz programa.')
-
+    
+    st.markdown('***')
+    
+    # propellant selector
+    # TODO - call RPA scripts/API to load output
+    
+    propellant_options = ["Hidrazin / Tečni kiseonik"]
+    selected_fuel = st.selectbox("Izabrati kombinaciju Gorivo/Oksidator", propellant_options)
     
     st.code('''# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
 # 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
@@ -43,6 +52,7 @@ def main():
 # 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
 # 7. Karakteristična dužina L*=1m''')
   
+    # RPA output        
     rpa_response = """Thrust and mass flow rates
 ------------------------------------------
    Chamber thrust (vac):   22.53030     kN
@@ -75,8 +85,12 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         Drag efficiency:    0.97848       
      Thrust coefficient:    1.67237  (vac)
 """
+    # display RPA output
     st.code(rpa_response)
     
+    # st.balloons()
+    
+    # regex pattern for extracting values from RPA response
     values = extract_values(rpa_response)
 
     if values:
@@ -100,14 +114,25 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     of_rpa = ox_flow_rate / fuel_flow_rate
     st.write(f"OF = {of_rpa:.3f}")
     
-    with st.sidebar:
-        # Inputs for the variables
-        st.title("Ulazni podaci")
+    st.subheader("Ulazni podaci iz RPA")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.code('vrednosti iz RPA')
         mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate, step=1.0) 
         OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=of_rpa, step=1.0)
         mox = st.number_input('Maseni protok oksidatora (mox)', value=ox_flow_rate, step=1.0)
         # propellant.components.ratio.value = 5.9
-        st.markdown('***')
+    with col2:
+        st.code('vrednosti iz RPA')
+        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
+        R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
+        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
+
+    st.markdown('***')
+        
+    with st.sidebar:
+        # Inputs for the variables
+        st.title("Ulazni podaci (analitika)")
         
         Pa_atm = st.number_input('2️⃣ Atmosferski pritisak (atm)', value=1)
         Pa = Pa_atm * 101325
@@ -121,14 +146,10 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=3.0)
         Lstar = st.number_input('(7) Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
         # st.markdown('***')
-        st.code('vrednosti iz RPA')
-        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
-        R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
-        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
     
     
     #--------------calculations-------------------------#
-    st.title('Calculations')
+    st.title('Analitičko rešenje')
 
     # mox
     # mox = OF * mg
