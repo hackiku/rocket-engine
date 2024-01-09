@@ -139,17 +139,17 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         # Inputs for the variables
         st.title("Zadati ulazni podaci")
         
-        Pa_atm = st.number_input('2️⃣ Atmosferski pritisak (atm)', value=1)
+        Pa_atm = st.number_input('Atmosferski pritisak (atm)', value=1)
         Pa = Pa_atm * 101325
         st.text(f'P = {Pa} = {Pa:.1e} Pa')
-        P_bar = st.number_input('3️⃣ Pritisak u komori (bar)', value=180)
+        P_bar = st.number_input('Pritisak u komori (bar)', value=180)
         P = P_bar * 100000
         st.text(f'P = {P} Pa = {P:.1e} Pa')  # Display chamber pressure in Pascals with both formats
 
-        F = st.number_input('(4) Sila potiska kN', value = 22)
-        epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=7.0)
-        d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=3.0)
-        Lstar = st.number_input('(7) Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
+        F = st.number_input('Sila potiska kN', value = 22)
+        epsilon_i = st.number_input('Stepen sirenja mlaznika (epsilon_i)', value=7.0)
+        d_dkdr = st.number_input('Precnik komore / grla mlaznika (d_dkdr)', value=3.0)
+        Lstar = st.number_input('Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
         
         st.markdown('***')
         tooltip_sidebar = "vrednosti izvučene REGEX analizom RPA izlaza"
@@ -248,6 +248,7 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     st.markdown('***') 
     st.code('Odredjivanje Mahovog broja na izlazu mlaznika')
 
+    st.markdown(f'$\epsilon_{{i_opt}} = {epsilon_i:.2f}$', help='zadati stepen sirenja mlaznika, izmeniti u sidebar-u')
     st.markdown(r'''
         $ \epsilon_{i opt} = \frac{
         \left(1 + \frac{\kappa - 1}{2} \cdot M_{iter}^2\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
@@ -261,7 +262,7 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         Mi_guess = st.number_input("M iterativni izbor", value=2.8, step=0.1)
     with col2:
         spacer('2em')
-        st.markdown(fr"$M_iter = {Mi_guess:.3f}$")
+        st.markdown(f"$ M_{{iter}} = {Mi_guess:.3f}$")
 
     # fsolve
     def equation(Mi, kappa, epsilon_i):
@@ -287,7 +288,7 @@ Mi_solution = {Mi_solution[0]:.4f}
         spacer('2em')
         st.markdown(fr"$M_i = {M_i:.3f}$")
 
-    # 6. Static Pressure at Nozzle Exit
+    # 7. Static Pressure at Nozzle Exit
     pi = P / ((1 + (kappa - 1) / 2 * M_i**2)**(kappa / (kappa - 1)))
     st.code('7. Statički pritisak na izlazu iz mlaznika:')
     st.markdown(r'''
@@ -298,7 +299,9 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
     $ p_i = \\frac{{{P:.2e}}}{{\\left(1 + \\frac{{{kappa} - 1}}{{2}} \cdot {M_i:.3f}^2\\right)^{{\\frac{{{kappa}}}{{{kappa} - 1}}}}}} = {pi:.3f} \\, \\text{{Pa}} $
     ''')
-
+    pi_sci = format_scientific_latex(pi)
+    st.markdown(f'> $ p_{{i}} = {pi_sci} \\, \\text{{Pa}} $')
+    
     spacer()
 
     # Optimalni stepen sirenja mlaznika
@@ -309,7 +312,7 @@ Mi_solution = {Mi_solution[0]:.4f}
     $$ M_{i \text{ opt}} = \sqrt{\left[\left(\frac{P}{P_a}\right)^{\frac{\kappa - 1}{\kappa}} - 1\right] \cdot \frac{2}{\kappa - 1}} $$
     ''')
     st.markdown(f'$ M_{{i opt}} = \\sqrt{{\\left[\\left(\\frac{{{P:.2e}}}{{{Pa:.2e}}}\\right)^{{\\frac{{{kappa} - 1}}{{{kappa}}}}} - 1\\right] \\cdot \\frac{{2}}{{{kappa} - 1}}}} = {Mi_opt:.3f} $')
-
+    st.markdown(f'> $ M_{{i opt}} = {Mi_opt:.3f} $')
     spacer()
 
     # 9. Calculate the optimal expansion ratio (e_i opt)
@@ -328,6 +331,7 @@ Mi_solution = {Mi_solution[0]:.4f}
         {Mi_opt:.3f} \cdot \\left(\\frac{{{kappa} + 1}}{{2}}\\right)^{{\\frac{{{kappa} + 1}}{{2({kappa} - 1)}}}}
         }} = {e_i_opt:.3f} $
     ''')
+    st.markdown(f'> $ \epsilon_{{i opt}} = {e_i_opt:.3f} $')
 
     spacer()
 
@@ -337,8 +341,10 @@ Mi_solution = {Mi_solution[0]:.4f}
     $$ A_{opt} = \epsilon_{i opt} \cdot A_{kr} $$
     ''')
     st.markdown(f'''
-        $ A_{{opt}} = {e_i_opt:.3f} \cdot {Akr:.3f} = {Aiopt:.3f} \\, \\text{{m}}^2 $
+        $ A_{{opt}} = {e_i_opt:.3f} \cdot {Akr:.3f} = {Aiopt:.5f} \\, \\text{{m}}^2 $
     ''')
+    Aiopt_sci = format_scientific_latex(Aiopt)
+    st.markdown(f'> $ A_{{opt}} = {Aiopt_sci} \\, \\text{{m}}^2 $')
     spacer()
 
     # Calculate optimal nozzle exit diameter
@@ -350,6 +356,8 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ d_{{iopt}} = \sqrt{{ {Aiopt:.3f} \\cdot \\frac{{4}}{{\\pi}} }} = {diopt:.3f} \\, \\text{{m}}^2 $
     ''')
+    diopt_sci = format_scientific_latex(diopt)
+    st.markdown(f'> $ d_{{iopt}} = {diopt_sci} \\, \\text{{m}} $')
     spacer()
 
     # Calculation of the temperature function Gamma(kappa)
@@ -370,7 +378,9 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ T = \\frac{{({Cstar:.3f} \\cdot {Gamma_kappa:.3f})^2}}{{{R:.3f}}} = {T:.3f} \\, \\text{{K}} $
     ''')
-
+    T_sci = format_scientific_latex(T)
+    st.markdown(f'> $ T = {T_sci} \\, \\text{{K}} $')
+    st.success(f'T = {T:.3f} K')
     spacer()
 
     # brzina isticanja pri zadanom i optimalnom stepenu sirenja
@@ -382,6 +392,9 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ V_i = \sqrt{{ \\frac{{2 \cdot {kappa}}}{{ {kappa} - 1 }} \cdot {R} \cdot {T:.3f} \cdot \\left[ 1 - \\frac{{1}}{{\\left(\\frac{{ {P} }}{{ {pi:.3f} }}\\right)^{{\\frac{{ {kappa} - 1 }}{{ {kappa} }}}}}} \\right] }}  = {Vi:.3f} \\, \\text{{m/s}} $
     ''')
+    Vi_sci = format_scientific_latex(Vi)
+    st.markdown(f'> $ V_{{i}} = {Vi_sci} \\, \\text{{m/s}} $')
+    spacer()
 
     Vi_opt = (2*kappa/(kappa-1) * R * T * (1 - 1/((P/Pa)**((kappa-1)/kappa))))**0.5
     st.markdown(r'''
@@ -390,7 +403,9 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ V_{{iopt}} = \sqrt{{ \\frac{{2 \cdot {kappa}}}{{ {kappa} - 1 }} \cdot {R} \cdot {T:.3f} \cdot \\left[ 1 - \\frac{{1}}{{\\left(\\frac{{ {P} }}{{ {Pa:.3f} }}\\right)^{{\\frac{{ {kappa} - 1 }}{{ {kappa} }}}}}} \\right] }}  = {Vi_opt:.3f} \\, \\text{{m/s}} $
     ''')
-
+    Vi_opt_sci = format_scientific_latex(Vi_opt)
+    st.markdown(f'> $ V_{{iopt}} = {Vi_opt_sci} \\, \\text{{m/s}} $')
+    
     # Thrust at given expansion ratio
     st.code('11. Potisak pri zadanom stepenu sirenja')
     F = (mox + mg) * Vi + Ai * (pi - Pa)
@@ -400,6 +415,8 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ F = ({mox:.3f} + {mg:.3f}) \cdot {Vi:.3f} + {Ai:.3f} \cdot ({pi:.3f} - {Pa:.3f}) = {F:.3f} \\, \\text{{N}} $
     ''')
+    F_sci = format_scientific_latex(F)
+    st.markdown(f'> $ F = {F_sci} \\, \\text{{N}} $')
     spacer()
 
     # Thrust at optimal expansion ratio
@@ -410,6 +427,8 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ F_{{opt}} = ({mox:.3f} + {mg:.3f}) \cdot {Vi_opt:.3f} = {Fopt:.3f} \\, \\text{{N}} $
     ''')
+    Fopt_sci = format_scientific_latex(Fopt)
+    st.markdown(f'> $ F_{{opt}} = {Fopt_sci} \\, \\text{{N}} $')
     spacer()
 
     # Thrust Coefficient
@@ -421,31 +440,40 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ C_f = \\frac{{ {F:.3f} }}{{ {P:.3f} \\cdot {Akr:.5f} }} = {Cf:.3f} $
     ''')
+    # scientific notation Cf variant
+    P_sci = format_scientific_latex(P)
+    st.markdown(f'''
+        $ C_f = \\frac{{ {F_sci} }}{{ {P_sci} \\cdot {Akr_sci} }} = {Cf:.3f} $
+    ''')
+    st.markdown(f'> $ C_f = {Cf:.3f} $')
     spacer()
 
     # Specific Impulse at Given Expansion Ratio
-    st.write('13. Specifični impuls pri zadanom stepenu sirenja')
+    st.code('13. Specifični impuls pri zadanom stepenu sirenja')
     Isp = F / (mox + mg)
+    Isp_sec = Isp / 9.80665
     st.markdown(r'''
         $$ I_{sp} = \frac{F}{(m_{ox} + m_{g})} $$
     ''')
     st.markdown(f'''
-        $ I_{{sp}} = \\frac{{ {F:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp:.3f} \\, \\text{{Ns/Kg}} $
+        $ I_{{sp}} = \\frac{{ {F:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp:.2f} \\, \\text{{Ns/Kg}} = {Isp_sec:.2f} \\, \\text{{s}}$
     ''')
+    st.markdown(f'> $ I_{{sp}} = {Isp:.2f} \\, \\text{{Ns/Kg}} $')
     spacer()
 
     # Specific Impulse at Optimal Expansion Ratio
-    st.write('Specifični impuls pri optimalnom stepenu sirenja:')
+    st.code('Specifični impuls pri optimalnom stepenu sirenja:')
     Isp_opt = Fopt / (mox + mg)
+    Isp_opt_sec = Isp_opt / 9.80665
     st.markdown(r'''
         $$ I_{sp_{opt}} = \frac{F_{opt}}{(m_{ox} + m_{g})} $$
     ''')
     st.markdown(f'''
-        $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}} $
+        $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}}  = {Isp_opt_sec:.2f} \\, \\text{{s}}$
     ''')
+    st.markdown(f'> $ I_{{sp_{{opt}}}} = {Isp_opt:.2f} \\, \\text{{Ns/kg}} $')
     spacer()
     
-
     st.subheader("Poređenje rezultata")
     
     st.markdown(f"""
