@@ -470,7 +470,7 @@ Mi_solution = {Mi_solution[0]:.4f}
     ''')
     st.markdown(f'''
         $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}}  = {Isp_opt_sec:.2f} \\, \\text{{s}}$
-    ''')
+    ''', help='Isp/g = value in seconds')
     st.markdown(f'> $ I_{{sp_{{opt}}}} = {Isp_opt:.2f} \\, \\text{{Ns/kg}} $')
     spacer()
     
@@ -482,6 +482,7 @@ Mi_solution = {Mi_solution[0]:.4f}
 | Isp — Specific Impulse (Vac)       | `{isp_rpa*9.80665:.2f} Ns/Kg` | `{Isp:.2f} Ns/Kg`    | `{abs(isp_rpa*9.80665 - Isp):.2f} Ns/Kg` |
 | Cf – Thrust Coefficient (Vac)      | `{cf_rpa}`                    | `{Cf:.4f}`           | `{abs(cf_rpa - Cf):.4f}` |
 | F - Chamber Thrust (Vac)           | `{thrust_vac_rpa} kN`         | `{F/1000:.3f} kN`    | `{abs(thrust_vac_rpa - F/1000):.2f} kN` |
+| Fopt - Chamber Thrust (Opt)        | `{thrust_vac_rpa} kN`         | `{Fopt/1000:.3f} kN` | `{abs(thrust_vac_rpa - Fopt/1000):.2f} kN` |
 | Isp_opt - Specific Impulse (Opt)   | `{isp_opt_rpa*9.80665:.2f} Ns/Kg` | `{Isp_opt:.2f} Ns/Kg` | `{abs(isp_opt_rpa*9.80665 - Isp_opt):.2f} Ns/Kg` |
 | OF - Oxidizer/Fuel Ratio (OF)      | `{of_rpa:.3f}`                | `{OF:.3f}`           | `{abs(of_rpa - OF):.3f}` |
 
