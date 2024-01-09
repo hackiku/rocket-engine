@@ -34,24 +34,24 @@ def main():
     st.title("Raketni motori: seminarski rad")
     st.subheader("Ivan Karaman, 1186/23")
     spacer()
+    # problem statement
+    st.markdown("**Zadatak:**")
     st.write('Na osnovu definisanih ulaznih parametara potrebno je da se odrede performanse idealnog raketnog motora na tečno gorivo: specifični impuls, karakteristična brzina, koeficijent potiska, kao i preliminarna geometrija komore i mlaznika. Proračun uraditi za odnos mešanja koji odgovaraja maksimalnom specifičnom impulsu pomoću programa RPA, a zatim ručno izračunati iste vrednosti koristeći vrednosti karakteristične brzine i osobina produkata sagorevanja iz programa.')
     
     st.markdown('***')
     
-    # propellant selector
+    #===================== RPA =====================#
     # TODO - call RPA scripts/API to load output
-    
+
+    # title with tooltip
+    tooltip_message = "U budućim verzijama programa, planira se direktna integracija sa API-jem ili skriptom programa RPA."
+    st.subheader("Korišćenje programa RPA", help=tooltip_message)
+    st.markdown("Za više informacija o programu RPA, posetite [RPA Website](https://www.rocket-propulsion.com/index.htm).")
+
+    # Dropdown for fuel/oxidizer combination
     propellant_options = ["Hidrazin / Tečni kiseonik"]
     selected_fuel = st.selectbox("Izabrati kombinaciju Gorivo/Oksidator", propellant_options)
     
-    st.code('''# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
-# 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
-# 3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
-# 4. Sila potiska: 𝐹 = 2200 𝑑𝑎𝑁
-# 5. Stepen širenja: 𝜀 = 7
-# 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
-# 7. Karakteristična dužina L*=1m''')
-  
     # RPA output        
     rpa_response = """Thrust and mass flow rates
 ------------------------------------------
@@ -93,46 +93,34 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     # regex pattern for extracting values from RPA response
     values = extract_values(rpa_response)
 
-    if values:
-        isp = values['isp']
-        cf = values['cf']
-        thrust_vac = values['thrust_vac']
-        isp_opt = values['isp_opt']
-        ox_flow_rate = values['ox_flow_rate']
-        fuel_flow_rate = values['fuel_flow_rate']
-        
-        # Now you can use these variables in your code
-        st.text(f"Isp (vac) = {isp} s")
-        st.text(f"Cf (vac) = {cf}")
-        st.text(f"Chamber Thrust (vac) = {thrust_vac} kN")
-        st.text(f"Specific Impulse (opt) = {isp_opt} s")
-        st.text(f"Oxidizer Mass Flow Rate = {ox_flow_rate} kg/s")
-        st.text(f"Fuel Mass Flow Rate = {fuel_flow_rate} kg/s")
+    st.write("Ovaj program izvlaci vrednosti iz RPA izlaza koristeci REGEX pattern za svaku vrednost. Vrednosti se mogu naci u sidebar-u levo i izmeniti po potrebi.")
+    with st.expander("Prikaži vrednosti iz RPA putem REGEX-a"):
+        if values:
+            isp_rpa = values['isp']
+            cf_rpa = values['cf']
+            thrust_vac_rpa = values['thrust_vac']
+            isp_opt_rpa = values['isp_opt']
+            ox_flow_rate_rpa = values['ox_flow_rate']
+            fuel_flow_rate_rpa = values['fuel_flow_rate']
+            
+            # Now you can use these variables in your code
+            st.text(f"Isp (vac) = {isp_rpa} s")
+            st.text(f"Cf (vac) = {cf_rpa}")
+            st.text(f"Chamber Thrust (vac) = {thrust_vac_rpa} kN")
+            st.text(f"Specific Impulse (opt) = {isp_opt_rpa} s")
+            st.text(f"Oxidizer Mass Flow Rate = {ox_flow_rate_rpa} kg/s")
+            st.text(f"Fuel Mass Flow Rate = {fuel_flow_rate_rpa} kg/s")
     
-    Cstar_rpa = (thrust_vac * 1000) / ((ox_flow_rate + fuel_flow_rate) * cf)
-    st.success(f"Cstar (vac) = {Cstar_rpa:.0f} m/s")
-    of_rpa = ox_flow_rate / fuel_flow_rate
-    st.write(f"OF = {of_rpa:.3f}")
+        Cstar_rpa = (thrust_vac_rpa * 1000) / ((ox_flow_rate_rpa + fuel_flow_rate_rpa) * cf_rpa)
+        st.success(f"Cstar (vac) = {Cstar_rpa:.0f} m/s")
+        of_rpa = ox_flow_rate_rpa / fuel_flow_rate_rpa
+        st.write(f"OF = {of_rpa:.3f}")
     
-    st.subheader("Ulazni podaci iz RPA")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.code('vrednosti iz RPA')
-        mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate, step=1.0) 
-        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=of_rpa, step=1.0)
-        mox = st.number_input('Maseni protok oksidatora (mox)', value=ox_flow_rate, step=1.0)
-        # propellant.components.ratio.value = 5.9
-    with col2:
-        st.code('vrednosti iz RPA')
-        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
-        R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
-        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
-
     st.markdown('***')
         
     with st.sidebar:
         # Inputs for the variables
-        st.title("Ulazni podaci (analitika)")
+        st.title("Zadati ulazni podaci")
         
         Pa_atm = st.number_input('2️⃣ Atmosferski pritisak (atm)', value=1)
         Pa = Pa_atm * 101325
@@ -145,11 +133,33 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         epsilon_i = st.number_input('(5) Stepen sirenja mlaznika (epsilon_i)', value=7.0)
         d_dkdr = st.number_input('(6) Odnos precnika komore i grla mlaznika (d_dkdr)', value=3.0)
         Lstar = st.number_input('(7) Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
-        # st.markdown('***')
+        
+        st.markdown('***')
+        tooltip_sidebar = "vrednosti izvučene REGEX analizom RPA izlaza"
+        st.title("Ulazni podaci iz RPA", help=tooltip_sidebar)
+        
+        mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate_rpa, step=1.0) 
+        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=of_rpa, step=1.0)
+        mox = st.number_input('Maseni protok oksidatora (mox)', value=ox_flow_rate_rpa, step=1.0)
+        # propellant.components.ratio.value = 5.9
+        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
+        R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
+        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
     
+    #======================================================#
+    #===================== analytical =====================#
+    #======================================================#
     
-    #--------------calculations-------------------------#
     st.title('Analitičko rešenje')
+    st.markdown('**zadate vrednosti**')
+    st.code('''# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
+# 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
+# 3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
+# 4. Sila potiska: 𝐹 = 2200 𝑑𝑎𝑁
+# 5. Stepen širenja: 𝜀 = 7
+# 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
+# 7. Karakteristična dužina L*=1m''')
+
 
     # mox
     # mox = OF * mg
@@ -218,14 +228,27 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         epsilon_i_opt_denominator = Mi * ((kappa + 1) / 2)**((kappa + 1) / (2 * (kappa - 1)))
         return epsilon_i_opt_numerator / epsilon_i_opt_denominator - epsilon_i
 
-    Mi_guess = 28
+    Mi_guess = 2.8
 
     Mi_solution = fsolve(equation, Mi_guess, args=(kappa, epsilon_i))
+    
+    st.code(f"""from scipy.optimize import fsolve
+def equation(Mi, kappa, epsilon_i):
+    epsilon_i_opt_numerator = (1 + (kappa - 1) / 2 * Mi**2)**((kappa + 1) / (2 * (kappa - 1)))
+    epsilon_i_opt_denominator = Mi * ((kappa + 1) / 2)**((kappa + 1) / (2 * (kappa - 1)))
+    return epsilon_i_opt_numerator / epsilon_i_opt_denominator - epsilon_i
+Mi_guess = {Mi_guess}
+Mi_solution = fsolve(equation, Mi_guess, args=(kappa, epsilon_i))
+Mi_solution = {Mi_solution[0]:.4f}
+""")
+    col1, col2 = st.columns([1,3])
+    with col1:
+        M_i = st.number_input("M_i ručna izmena", value=Mi_solution[0], step=1.00)
+    with col2:
+        spacer('2em')
+        st.markdown(fr"$M_i = {M_i:.3f}$")
 
-    # Output the result - Mi value
-    st.code(f"The solution for Mi is: {Mi_solution[0]}")
-    M_i = st.number_input("M_i value", value=Mi_solution[0], step=1.00)
-
+    # 6. Static Pressure at Nozzle Exit
     pi = P / ((1 + (kappa - 1) / 2 * M_i**2)**(kappa / (kappa - 1)))
     st.code('7. Statički pritisak na izlazu iz mlaznika:')
     st.markdown(r'''
@@ -382,16 +405,21 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}} $
     ''')
     spacer()
+    
 
-    st.markdown(f"""| Parameter                      | Raw RPA regex    | RPA Value         | Calculated Value   |
-|--------------------------------|------------------|-------------------|--------------------|
-| Specific Impulse (Vac)         | `321.23033 s`    | `{isp} s`         | `{Isp/9.80665} Ns/Kg`       |
-| Thrust Coefficient (Vac)       | `1.67237`        | `{cf}`            | `{Cf}`          |
-| Chamber Thrust (Vac)           | `22.53030 kN`    | `{thrust_vac} kN` | `{F} kN`|
-| Specific Impulse (Opt)         | `291.85683 s`    | `{isp_opt} s`     | `{Isp_opt/9.80665} s`   |
-| Oxidizer/Fuel Ratio (OF)       | `{of_rpa:.3f}`   | `{OF}`            | `{OF}`          |
+    st.subheader("Poređenje rezultata")
+    
+    st.markdown(f"""
+| Parameter                          | RPA Value                     | Analytical Value     | Difference             |
+|------------------------------------|-------------------------------|----------------------|------------------------|
+| Isp — Specific Impulse (Vac)       | `{isp_rpa*9.80665:.2f} Ns/Kg` | `{Isp:.2f} Ns/Kg`    | `{abs(isp_rpa*9.80665 - Isp):.2f} Ns/Kg` |
+| Cf – Thrust Coefficient (Vac)      | `{cf_rpa}`                    | `{Cf:.4f}`           | `{abs(cf_rpa - Cf):.4f}` |
+| F - Chamber Thrust (Vac)           | `{thrust_vac_rpa} kN`         | `{F/1000:.3f} kN`    | `{abs(thrust_vac_rpa - F/1000):.2f} kN` |
+| Isp_opt - Specific Impulse (Opt)   | `{isp_opt_rpa*9.80665:.2f} Ns/Kg` | `{Isp_opt:.2f} Ns/Kg` | `{abs(isp_opt_rpa*9.80665 - Isp_opt):.2f} Ns/Kg` |
+| OF - Oxidizer/Fuel Ratio (OF)      | `{of_rpa:.3f}`                | `{OF:.3f}`           | `{abs(of_rpa - OF):.3f}` |
 
 """, unsafe_allow_html=True)
+
 
 if __name__ == "__main__":
     main()
