@@ -3,6 +3,25 @@ from utils import spacer
 from scipy.optimize import fsolve
 import re
 
+def format_scientific_latex(number, precision=3):
+    """
+    Format a number into scientific notation with LaTeX formatting.
+
+    Args:
+    number (float): The number to format.
+    precision (int): The number of decimal places.
+
+    Returns:
+    str: Formatted string in scientific notation.
+    """
+    # Format to scientific notation with specified precision
+    formatted_number = f"{number:.{precision}e}"
+
+    # Split at 'e' and reconstruct with LaTeX-friendly format
+    number_parts = formatted_number.split('e')
+    return f"{number_parts[0]} \\times 10^{{{number_parts[1]}}}"
+
+
 # regex pattern for extracting values from RPA response
 def extract_values(rpa_response):
     patterns = {
@@ -87,9 +106,7 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
 """
     # display RPA output
     st.code(rpa_response)
-    
-    # st.balloons()
-    
+        
     # regex pattern for extracting values from RPA response
     values = extract_values(rpa_response)
 
@@ -173,31 +190,46 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     Akr = Cstar * (mg + mox) / P
     dkr = (Akr * 4 / 3.14159)**0.5
     st.code('2. Kriticni presek i precnik mlaznika:')
-    st.markdown('$A_{kr} = \\frac{C_{star} \cdot (mg + m_{ox})}{P}$')
-    st.markdown(f'$ A_{{kr}} = \\frac{{ {Cstar:.3f} \, \cdot \, ({mg:.3f} + {mox:.3f}) }}{{ {P:.3f} }} = {Akr:.3f} \\, m^2 $')
+    st.markdown('$ A_{kr} = \\frac{C_{star} \cdot (mg + m_{ox})}{P}$')
+    st.markdown(f'$ A_{{kr}} = \\frac{{ {Cstar:.3f} \, \cdot \, ({mg:.3f} + {mox:.3f}) }}{{ {P:.3f} }} = {Akr:.6f} \\, m^2 $')    
+    # scientific notation Akr
+    Akr_sci = format_scientific_latex(Akr)
+    st.markdown(f'> $ A_{{kr}} = {Akr_sci} \\, m^2 $')
+    
     spacer('2em')
     st.markdown('$d_{kr} = \\sqrt{A_{kr} \cdot \\frac{4}{\\pi}}$')
-    st.markdown(f'$ d_{{kr}} = \\sqrt{{{Akr:.3f} \cdot \\frac{{4}}{{\\pi}}}} = {dkr:.3f} \\, \\text{{m}} $', unsafe_allow_html=True)
+    st.markdown(f'$ d_{{kr}} = \\sqrt{{{Akr:.3f} \cdot \\frac{{4}}{{\\pi}}}} = {dkr:.5f} \\, \\text{{m}} $', unsafe_allow_html=True)
+    dkr_sci = format_scientific_latex(dkr)
+    st.markdown(f'> $ d_{{kr}} = {dkr_sci} \\, \\text{{m}} $')
+    
     spacer()
 
     # Vkom
     Vkom = Lstar * Akr
     st.code('3. Zapremina komore:')
     st.markdown('$V_{kom} = L_{kar} \cdot A_{kr}$')
-    st.markdown(f'$ V_{{kom}} = {Lstar:.3f} \, \cdot \, {Akr:.3f} = {Vkom:.3f} \\, m^3 $')
+    st.markdown(f'$ V_{{kom}} = {Lstar:.3f} \, \cdot \, {Akr:.3f} = {Vkom:.5f} \\, m^3 $')
+    Vkom_sci = format_scientific_latex(Vkom)
+    st.markdown(f'> $ V_{{kom}} = {Vkom_sci} \\, m^3 $')
+    
     spacer()
 
     # 4. Chamber Diameter and Length
+    # TODO numbers???
+    
     d_dkdr = 80.02 / 30.88
     dk = dkr * d_dkdr
     lk = Vkom / (dk**2 * 3.14159 / 4)
     st.code('4. Precnik i duzina komore')
     st.markdown('$d_{k} = d_{kr} \cdot \\frac{D_k}{d_{kr}}$')
     st.markdown(f'$ d_{{k}} = {dkr:.3f} \, \cdot \, {d_dkdr:.3f} = {dk:.3f} \\, \\text{{m}} $')
+    
+    # lk - chamber length
     st.markdown('$l_{k} = \\frac{V_{kom}}{\\frac{d_{k}^2 \cdot \\pi}{4}}$')
     # st.markdown(f'$ l_{{k}} = \\frac{{{Vkom:.3f}}}{{\\frac{{{dk:.3f}}^2 \cdot \\pi}}{{4}}}} = {lk:.3f} \\, \\text{{m}} $')
     st.markdown(f'$ l_{{k}} = \\frac{{ {Vkom:.3f} }}{{ \\frac{{ {dk:.3f}^2 \cdot \\pi }}{{ 4 }} }} = {lk:.3f} \\, \\text{{m}} $')
-
+    lk_sci = format_scientific_latex(lk)
+    st.markdown(f'> $ l_{{k}} = {lk_sci} \\, \\text{{m}} $')
     spacer()
 
     # 5. Nozzle Exit Area and Diameter
@@ -208,7 +240,9 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     st.markdown(f'$ A_{{i}} = {epsilon_i:.3f} \\cdot {Akr:.3f} = {Ai:.5f} \\, \\text{{m}}^{{2}} $')
     st.markdown('$d_{i} = \\sqrt{\\frac{A_{i} \cdot 4}{\\pi}}$')
     st.markdown(f'$ d_{{i}} = \\sqrt{{\\frac{{{Ai:.3f} \\cdot 4}}{{\\pi}}}} = {di:.3f} \\, \\text{{m}} $')
-
+    di_sci = format_scientific_latex(di)
+    st.markdown(f'> $ d_{{i}} = {di_sci} \\, \\text{{m}} $')
+    
     # -----------------fsolve---------------------#
     # mach
     st.markdown('***') 
@@ -222,13 +256,18 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
         } $
     ''')
     
+    col1, col2 = st.columns([1,3])
+    with col1:
+        Mi_guess = st.number_input("M iterativni izbor", value=2.8, step=0.1)
+    with col2:
+        spacer('2em')
+        st.markdown(fr"$M_iter = {Mi_guess:.3f}$")
+
     # fsolve
     def equation(Mi, kappa, epsilon_i):
         epsilon_i_opt_numerator = (1 + (kappa - 1) / 2 * Mi**2)**((kappa + 1) / (2 * (kappa - 1)))
         epsilon_i_opt_denominator = Mi * ((kappa + 1) / 2)**((kappa + 1) / (2 * (kappa - 1)))
         return epsilon_i_opt_numerator / epsilon_i_opt_denominator - epsilon_i
-
-    Mi_guess = 2.8
 
     Mi_solution = fsolve(equation, Mi_guess, args=(kappa, epsilon_i))
     
@@ -237,7 +276,7 @@ def equation(Mi, kappa, epsilon_i):
     epsilon_i_opt_numerator = (1 + (kappa - 1) / 2 * Mi**2)**((kappa + 1) / (2 * (kappa - 1)))
     epsilon_i_opt_denominator = Mi * ((kappa + 1) / 2)**((kappa + 1) / (2 * (kappa - 1)))
     return epsilon_i_opt_numerator / epsilon_i_opt_denominator - epsilon_i
-Mi_guess = {Mi_guess}
+Mi_guess = {Mi_guess:.1f}
 Mi_solution = fsolve(equation, Mi_guess, args=(kappa, epsilon_i))
 Mi_solution = {Mi_solution[0]:.4f}
 """)
