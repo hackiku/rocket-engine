@@ -2,6 +2,7 @@ import streamlit as st
 from utils import spacer
 from scipy.optimize import fsolve
 import re
+import inspect
 
 def format_scientific_latex(number, precision=3):
     """
@@ -94,6 +95,10 @@ U budućim verzijama programa, planira se direktna integracija sa API-jem ili sk
     propellant_options = ["Hidrazin / Tečni kiseonik"]
     selected_fuel = st.selectbox("Izabrati kombinaciju Gorivo/Oksidator", propellant_options)
     
+    if st.button("Screenshot izbora goriva/oksidatora"):
+        st.image('./assets/propellant_specification.png')
+
+    st.markdown('***')
     
     #==========================================================#
     #===================== 2. OUTPUT DATA =====================#
@@ -106,45 +111,45 @@ U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Unos poda
 - regex pattern za izvlačenje vrednosti iz RPA izlaza
 - 
 """)
-
+    st.markdown('***')
+    
     st.subheader("1.2.1. Performanse raketnog motora")
     
     
     #===================== regex output =====================#
-    st.markdown("""### Izlas iz sekcije "
-""")
+    st.markdown("""Pre svega se prikazuje RPA izlaz is sekcije **Engine design** jer većina podataka potrebnih za analitičko rešenje se nalazi u ovoj sekciji, a potrebno ih je izvući REGEX-om.""")
     # RPA output        
     rpa_response = """Thrust and mass flow rates
 ------------------------------------------
-   Chamber thrust (vac):   22.53030     kN
- Specific impulse (vac):  321.23033      s
-   Chamber thrust (opt):   20.47012     kN
- Specific impulse (opt):  291.85683      s
-   Total mass flow rate:    7.15204   kg/s
-Oxidizer mass flow rate:    4.14013   kg/s
-    Fuel mass flow rate:    3.01191   kg/s
+   Chamber thrust (vac):   22.54541     kN
+ Specific impulse (vac):  321.13823      s
+   Chamber thrust (opt):   20.59261     kN
+ Specific impulse (opt):  293.32238      s
+   Total mass flow rate:    7.15889   kg/s
+Oxidizer mass flow rate:    3.28500   kg/s
+    Fuel mass flow rate:    3.87388   kg/s
 
 Geometry of thrust chamber with truncated ideal contour (TIC) nozzle
 (designed using method of characteristics)
 ------------------------------------------
-    Dc =   80.02  mm       b =   30.00 deg
-    R2 =   14.67  mm      R1 =    0.36  mm
+    Dc =   54.22  mm       b =   30.00 deg
+    R2 =    2.64  mm      R1 =    0.37  mm
     L* = 1000.00  mm
-    Lc =  169.87  mm    Lcyl =  123.29  mm
-    Dt =   30.88  mm
-    Rn =   11.80  mm      Tn =   21.08 deg (max)
-    Le =  100.66  mm      Te =    6.17 deg
-    De =   81.71  mm
+    Lc =  340.61  mm    Lcyl =  319.95  mm
+    Dt =   31.31  mm
+    Rn =   11.96  mm      Tn =   20.83 deg (max)
+    Le =  104.07  mm      Te =    5.96 deg
+    De =   82.83  mm
  Ae/At =    7.00    
- Le/Dt =    3.26    
-Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
+ Le/Dt =    3.32    
+Le/c15  =  107.37 % (relative to length of cone nozzle with Te=15 deg)
 
-  Mass =    9.91  kg
+  Mass =   16.48  kg
 
                   Tw/T0:    0.20000       
-  Divergence efficiency:    1.00000       
-        Drag efficiency:    0.97848       
-     Thrust coefficient:    1.67237  (vac)
+  Divergence efficiency:    0.99928       
+        Drag efficiency:    0.97843       
+     Thrust coefficient:    1.66117  (vac)
 """
     # display RPA output
     st.code(rpa_response)
@@ -153,30 +158,46 @@ Le/c15  =  105.28 % (relative to length of cone nozzle with Te=15 deg)
     values = extract_values(rpa_response)
 
     st.write("Ovaj program izvlaci vrednosti iz RPA izlaza koristeci REGEX pattern za svaku vrednost. Vrednosti se mogu naci u sidebar-u levo i izmeniti po potrebi.")
-    with st.expander("Prikaži vrednosti iz RPA putem REGEX-a"):
-        if values:
-            isp_rpa = values['isp']
-            cf_rpa = values['cf']
-            thrust_vac_rpa = values['thrust_vac']
-            isp_opt_rpa = values['isp_opt']
-            ox_flow_rate_rpa = values['ox_flow_rate']
-            fuel_flow_rate_rpa = values['fuel_flow_rate']
-            
-            # Now you can use these variables in your code
+    st.markdown("###### podaci izvučeni REGEX-om:")
+    
+    if values:
+        isp_rpa = values['isp']
+        cf_rpa = values['cf']
+        thrust_vac_rpa = values['thrust_vac']
+        isp_opt_rpa = values['isp_opt']
+        ox_flow_rate_rpa = values['ox_flow_rate']
+        fuel_flow_rate_rpa = values['fuel_flow_rate']
+        
+        # quick calculations for final data
+        Cstar_rpa = (thrust_vac_rpa * 1000) / ((ox_flow_rate_rpa + fuel_flow_rate_rpa) * cf_rpa)
+        of_rpa = ox_flow_rate_rpa / fuel_flow_rate_rpa
+        
+        # raw code display
+        st.code(f'''
+        Isp (vakuum) = {isp_rpa} s
+        Cf (vakuum) = {cf_rpa}
+        Potisak komore (vakuum) = {thrust_vac_rpa} kN
+        Specifični impuls (optimalno) = {isp_opt_rpa} s
+        Protok mase oksidatora = {ox_flow_rate_rpa} kg/s
+        Protok mase goriva = {fuel_flow_rate_rpa} kg/s
+        Cstar (vakuum) = {Cstar_rpa:.0f} m/s
+        OF = {of_rpa:.3f}
+        ''')
+
+        with st.expander("Provera raw REGEX teksta (opciono)"):
+            st.code(inspect.getsource(extract_values))
             st.text(f"Isp (vac) = {isp_rpa} s")
             st.text(f"Cf (vac) = {cf_rpa}")
             st.text(f"Chamber Thrust (vac) = {thrust_vac_rpa} kN")
             st.text(f"Specific Impulse (opt) = {isp_opt_rpa} s")
             st.text(f"Oxidizer Mass Flow Rate = {ox_flow_rate_rpa} kg/s")
             st.text(f"Fuel Mass Flow Rate = {fuel_flow_rate_rpa} kg/s")
+            st.write(f"OF = {of_rpa:.3f}") 
+            st.success(f"Cstar (vac) = {Cstar_rpa:.0f} m/s")
+
+        st.markdown('***')
     
-        Cstar_rpa = (thrust_vac_rpa * 1000) / ((ox_flow_rate_rpa + fuel_flow_rate_rpa) * cf_rpa)
-        st.success(f"Cstar (vac) = {Cstar_rpa:.0f} m/s")
-        of_rpa = ox_flow_rate_rpa / fuel_flow_rate_rpa
-        st.write(f"OF = {of_rpa:.3f}")
-    
-    st.markdown('***')
-        
+    #===================== sidebar =====================#
     with st.sidebar:
         # Inputs for the variables
         st.title("Zadati ulazni podaci")
