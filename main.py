@@ -41,7 +41,6 @@ def extract_values(rpa_response):
         else:
             st.error(f"Could not find the value for {key.replace('_', ' ').title()}.")
             return None
-
     return values
 
 
@@ -50,11 +49,18 @@ def main():
 
     # intro
     st.image('./assets/Logo_masinski_fakultet.jpg', width=100)
-    st.title("Raketni motori: seminarski rad")
-    st.subheader("Ivan Karaman, 1186/23")
+    st.markdown("### Raketni motori")
+    st.markdown("# Seminarski rad")
     spacer()
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("##### Student: Ivan Karaman, 1186/23")
+    with col2:
+        st.markdown("##### Profesor: dr Nikola Davidović")
+    st.markdown('***')
+    
     # problem statement
-    st.markdown("**Zadatak:**")
+    st.markdown("### Zadatak")
     st.write('Na osnovu definisanih ulaznih parametara potrebno je da se odrede performanse idealnog raketnog motora na tečno gorivo: specifični impuls, karakteristična brzina, koeficijent potiska, kao i preliminarna geometrija komore i mlaznika. Proračun uraditi za odnos mešanja koji odgovaraja maksimalnom specifičnom impulsu pomoću programa RPA, a zatim ručno izračunati iste vrednosti koristeći vrednosti karakteristične brzine i osobina produkata sagorevanja iz programa.')
     
     st.markdown('***')
@@ -64,13 +70,49 @@ def main():
 
     # title with tooltip
     tooltip_message = "U budućim verzijama programa, planira se direktna integracija sa API-jem ili skriptom programa RPA."
-    st.subheader("Korišćenje programa RPA", help=tooltip_message)
-    st.markdown("Za više informacija o programu RPA, posetite [RPA Website](https://www.rocket-propulsion.com/index.htm).")
+    st.title("1. Korišćenje programa RPA", help=tooltip_message)
+    st.markdown("""
+Ova Python aplikacija koristi podatka iz programa [RPA Rocket Propulsion Analysis](https://www.rocket-propulsion.com/index.htm). Za računanje performansi raketnog motora, potrebno je uneti ulazne parametre u sidebar sa leve strane.
+U budućim verzijama programa, planira se direktna integracija sa API-jem ili skriptom programa RPA.
+""")
+    st.header("1.1. Ulazni podaci")
+    st.markdown("""
+1. Podaci u sidebar-u levo **"Zadati ulazni podaci"** ubačeni su iz RPA izlaza, i mogu se izmeniti po potrebi. Isti podaci koriste se za analitičko rešenje (naredna sekcija 2.)
+2. **Ulazni podaci iz RPA** u sidebar-u dobijeni iz izlaza RPA, ali se mogu izmeniti po potrebi za testiranje analitičkog rešenja (npr. ako se želi izračunati drugačiji odnos mešanja goriva i oksidatora)
+3. Kombinacija gorivo/oksidator data je u dropdown meniju ispod. Za sad postoji samo jedna opcija, ali se planira integracija sa API-jem ili skriptom programa RPA u budućim verzijama ovog Python programa kako bi korisnici mogli direktno interagovati sa RPA odavde)
+""")
 
+    if st.button("Screenshot-ovi iz RPA"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.image('./assets/engine_definition.png', width=200)
+        with col2:
+            st.image('./assets/engine_definition.png', width=200)
+        with col3:
+            st.image('./assets/propellant_specification.png', width=200)
     # Dropdown for fuel/oxidizer combination
     propellant_options = ["Hidrazin / Tečni kiseonik"]
     selected_fuel = st.selectbox("Izabrati kombinaciju Gorivo/Oksidator", propellant_options)
     
+    
+    #==========================================================#
+    #===================== 2. OUTPUT DATA =====================#
+    #==========================================================#
+    
+    st.header("1.2. Izlazni podaci")
+    st.markdown("""
+U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Unos podataka je maksimalno automatizovan, ali zbog nedovršene integracije podaci su uneti manualno, u formama:
+- `pandas dataframe()` za tabelarne podatke
+- regex pattern za izvlačenje vrednosti iz RPA izlaza
+- 
+""")
+
+    st.subheader("1.2.1. Performanse raketnog motora")
+    
+    
+    #===================== regex output =====================#
+    st.markdown("""### Izlas iz sekcije "
+""")
     # RPA output        
     rpa_response = """Thrust and mass flow rates
 ------------------------------------------
