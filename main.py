@@ -94,25 +94,23 @@ Ova Python aplikacija koristi podatka iz programa [RPA Rocket Propulsion Analysi
     propellant_options = ["Hidrazin / Tečni kiseonik"]
     selected_fuel = st.selectbox("Izabrati kombinaciju Gorivo/Oksidator", propellant_options)
     
-    if st.button("Screenshot izbora goriva/oksidatora"):
+    if st.button("🖼️ Screenshot izbora goriva/oksidatora"):
         st.image('./assets/propellant_specification.png')
 
-    st.markdown('***')
-    
+    st.download_button('💾 Preuzmi RPA konfiguraciju (.cfg)', './rpa/hail_hydra2.cfg', 'hail_hydra2.cfg', 'text/plain')
+
+    st.markdown('***')  
     #==========================================================#
     #===================== 2. OUTPUT DATA =====================#
     #==========================================================#
     
     st.header("1.2. Performanse idealnog raketnog motora")
     st.markdown("""
-U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Unos podataka je maksimalno automatizovan, ali zbog nedovršene integracije podaci su uneti manualno, u formama:
-- `pandas dataframe()` za tabelarne podatke
-- regex pattern za izvlačenje vrednosti iz RPA izlaza
-- 
+U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Izvlačenje numeričkih podataka iz RPA izlaza (u tekstualnom ili HTML formatu) je automatizovo, ali zbog nedovršene integracije sami izlazi su uneti manualno.
 """)
-    st.markdown('***')
+    spacer()
     
-    st.subheader("1.2.1. Performanse raketnog motora")
+    st.subheader("1.2.1. Izlaz is RPA (Engine Design)")
     
     #===================== regex output =====================#
     st.markdown("""Pre svega se prikazuje RPA izlaz is sekcije **Engine design** jer većina podataka potrebnih za analitičko rešenje se nalazi u ovoj sekciji, a potrebno ih je izvući REGEX-om.""")
@@ -221,6 +219,60 @@ Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
         Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
         R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
         kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
+    
+    #===================== 1.2.2 PERFORMANCE =====================#
+    st.subheader("1.2.2. Analiza performansi")
+    
+    st.markdown("Ovde su prikazane specifikacije goriva korišćenog u raketnom motoru.")
+    html_file_path = './rpa/1_propellant_specification.html'
+    with open(html_file_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+    st.markdown(html_content, unsafe_allow_html=True)
+
+    spacer()
+
+    if st.button('⚠️ Prikaži ceo HTML', key='full_html', help='⚠️ Pažnja! velika HTML tabela, zauzima mnogo mesta na ekranu'):
+        html_file_path = './rpa/hydra2.html'
+        with open(html_file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        st.markdown(html_content, unsafe_allow_html=True)
+
+    # thermal
+    st.markdown("#### a) Termička Analiza")
+    st.markdown("Prikaz termičkih svojstava motora, uključujući temperature i toplotne tokove.")
+    if st.button('Prikaži RPA Podatke - Termička Analiza', key='thermal'):
+        html_file_path = './rpa/2_thermodynamic_properties.html'
+        with open(html_file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        st.markdown(html_content, unsafe_allow_html=True)
+
+    spacer()
+
+    # fractions combustion
+    st.markdown("#### b) Sastavi Sagorevanja")
+    st.markdown("Detalji o sastavima proizvoda sagorevanja i njihovim frakcijama.")
+    if st.button('Prikaži RPA Podatke - Sastavi Sagorevanja', key='combustion'):
+        html_file_path = './rpa/3_fractions_combustion.html'
+        with open(html_file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        st.markdown(html_content, unsafe_allow_html=True)
+
+    spacer()
+
+    # performance
+    st.markdown("#### c) Performanse")
+    st.markdown("Analiza performansi motora, uključujući specifični impuls i koeficijent potiska.")
+    if st.button('Prikaži RPA Podatke - Performanse', key='performance'):
+        html_file_path = './rpa/4_performance.html'
+        with open(html_file_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        st.markdown(html_content, unsafe_allow_html=True)
+    
+    st.markdown('***')
+    
+    #===================== 1.2.3 GEOMETRY =====================#
+    st.subheader("1.2.3. Geometrija mlaznika")
+    st.image('./assets/geometry.png')
     
     #======================================================#
     #===================== analytical =====================#
