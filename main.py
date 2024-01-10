@@ -31,7 +31,12 @@ def extract_values(rpa_response):
         'thrust_vac': r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN",
         'isp_opt': r"Specific impulse \(opt\):\s+([\d.]+)\s+s",
         'ox_flow_rate': r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s",
-        'fuel_flow_rate': r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s"
+        'fuel_flow_rate': r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s",
+        'dc': r"Dc =\s+([\d.]+)\s+mm",
+        'dt': r"Dt =\s+([\d.]+)\s+mm",
+        'de': r"De =\s+([\d.]+)\s+mm",
+        'lc': r"Lc =\s+([\d.]+)\s+mm",
+        'le': r"Le =\s+([\d.]+)\s+mm"
     }
 
     values = {}
@@ -161,6 +166,11 @@ Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
         isp_opt_rpa = values['isp_opt']
         ox_flow_rate_rpa = values['ox_flow_rate']
         fuel_flow_rate_rpa = values['fuel_flow_rate']
+        dc_rpa = values['dc'] # chamber diameter
+        dt_rpa = values['dt'] # throat diameter
+        de_rpa = values['de'] # exit diameter
+        lc_rpa = values['lc'] # chamber length
+        le_rpa = values['le'] # nozzle exit length
         
         # quick calculations for final data
         Cstar_rpa = (thrust_vac_rpa * 1000) / ((ox_flow_rate_rpa + fuel_flow_rate_rpa) * cf_rpa)
@@ -168,14 +178,22 @@ Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
         
         # raw code display
         st.code(f'''
+        # performanse
         Isp (vakuum) = {isp_rpa} s
         Cf (vakuum) = {cf_rpa}
         Potisak komore (vakuum) = {thrust_vac_rpa} kN
         Specifični impuls (optimalno) = {isp_opt_rpa} s
         Protok mase oksidatora = {ox_flow_rate_rpa} kg/s
         Protok mase goriva = {fuel_flow_rate_rpa} kg/s
-        Cstar (vakuum) = {Cstar_rpa:.0f} m/s
+        # izracunate vrednosti
+        Cstar (vakuum) = {Cstar_rpa:.0f} m/s # optimalni C* dat u sledecoj sekciji
         OF = {of_rpa:.3f}
+        # geometrija komore
+        Dc = {dc_rpa} mm # precnik komore
+        Dt = {dt_rpa} mm # precnik grla mlaznika
+        De = {de_rpa} mm # precnik izlaza mlaznika
+        Lc = {lc_rpa} mm # duzina komore
+        Le = {le_rpa} mm # duzina izlaza mlaznika
         ''')
 
         with st.expander("Provera raw REGEX teksta (opciono)"):
@@ -188,6 +206,11 @@ Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
             st.text(f"Fuel Mass Flow Rate = {fuel_flow_rate_rpa} kg/s")
             st.write(f"OF = {of_rpa:.3f}") 
             st.success(f"Cstar (vac) = {Cstar_rpa:.0f} m/s")
+            st.text(f"Dc = {dc_rpa} mm")
+            st.text(f"Dt = {dt_rpa} mm")
+            st.text(f"De = {de_rpa} mm")
+            st.text(f"Lc = {lc_rpa} mm")
+            st.text(f"Le = {le_rpa} mm")
 
         st.markdown('***')
     
@@ -275,30 +298,46 @@ Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
     st.image('./assets/geometry.png')
     
     #======================================================#
-    #===================== analytical =====================#
+    #===================== ANALYTICAL =====================#
     #======================================================#
     
     st.title('Analitičko rešenje')
     st.markdown('**zadate vrednosti**')
-    st.code('''# 1. Oksidator/gorivo: tečni kiseonik / hidrazin
-# 2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
-# 3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
-# 4. Sila potiska: 𝐹 = 2200 𝑑𝑎𝑁
-# 5. Stepen širenja: 𝜀 = 7
-# 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
-# 7. Karakteristična dužina L*=1m''')
+    st.code('''1. Oksidator/gorivo: tečni kiseonik / hidrazin
+2. Pritisak u komori: 𝑝 = 180 𝑏𝑎𝑟
+3. Atmosferski pritisak: 𝑝𝑎 = 1 𝑎𝑡𝑚
+4. Sila potiska: 𝐹 = 22 𝑑𝑎𝑁
+5. Stepen širenja: 𝜀 = 7
+6. Odnost prečnika komore i grla mlaznika Dk/dkr = 3
+7. Karakteristična dužina L* = 1m''')
 #    Protok mase oksidatora = {ox_flow_rate_rpa} kg/s
 #         Protok mase goriva = {fuel_flow_rate_rpa
 
-    # mox
+    method = st.radio(
+    "Izaberite metod za izračunavanje masenog protoka:",
+    ('Koristi RPA masene protoke', 'Izračunajte pomoću C* vrednosti')
+    )
+
+    if method == 'Koristi RPA masene protoke':
+        # Use RPA values directly
+        mox = ox_flow_rate_rpa
+        mg = fuel_flow_rate_rpa
+    else:
+        # Calculate using C* value
+        dkr = dt_rpa # throat diameter from RPA regex
+        Akr = (dkr**2 * 3.14159) / 4  # Assuming dkr is the throat diameter
+        mox = P * Akr / Cstar  # Oxidizer mass flow rate
+        mg = mox / OF  # Fuel mass flow rate
+
+    # mass flow rates ==============================
     # mox = OF * mg
-    mox = ox_flow_rate_rpa
-    st.code('1. Maseni protok oksidatora:')
-    st.markdown('$m_{ox} = OF \cdot mg$')
+    st.code('1. Maseni protoci:')
+    st.markdown(f'$m_{{g}} = {mg:.3f} \\, \\text{{kg/s}} $')
+    st.markdown('$m_{ox} = OF \cdot m_{g}$')
     st.markdown(f'$ m_{{ox}} = {OF:.3f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
     spacer()
 
-    # Akr
+    # Akr ==============================
     Akr = Cstar * (mg + mox) / P
     dkr = (Akr * 4 / 3.14159)**0.5
     st.code('2. Kriticni presek i precnik mlaznika:')
@@ -310,33 +349,31 @@ Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
     
     spacer('2em')
     st.markdown('$d_{kr} = \\sqrt{A_{kr} \cdot \\frac{4}{\\pi}}$')
-    st.markdown(f'$ d_{{kr}} = \\sqrt{{{Akr:.3f} \cdot \\frac{{4}}{{\\pi}}}} = {dkr:.5f} \\, \\text{{m}} $', unsafe_allow_html=True)
+    st.markdown(f'$ d_{{kr}} = \\sqrt{{{Akr:.5f} \cdot \\frac{{4}}{{\\pi}}}} = {dkr:.5f} \\, \\text{{m}} $', unsafe_allow_html=True)
     dkr_sci = format_scientific_latex(dkr)
     st.markdown(f'> $ d_{{kr}} = {dkr_sci} \\, \\text{{m}} $')
     
     spacer()
 
-    # Vkom
+    # Vkom ==============================
     Vkom = Lstar * Akr
     st.code('3. Zapremina komore:')
     st.markdown('$V_{kom} = L_{kar} \cdot A_{kr}$')
-    st.markdown(f'$ V_{{kom}} = {Lstar:.3f} \, \cdot \, {Akr:.3f} = {Vkom:.5f} \\, m^3 $')
+    st.markdown(f'$ V_{{kom}} = {Lstar:.3f} \, \cdot \, {Akr_sci} = {Vkom:.5f} \\, m^3 $')
     Vkom_sci = format_scientific_latex(Vkom)
     st.markdown(f'> $ V_{{kom}} = {Vkom_sci} \\, m^3 $')
     
     spacer()
 
-    # 4. Chamber Diameter and Length
+    # 4. Chamber Diameter and Length ==============================
     # TODO numbers???
-    
-    d_dkdr = 80.02 / 30.88
     dk = dkr * d_dkdr
     lk = Vkom / (dk**2 * 3.14159 / 4)
     st.code('4. Precnik i duzina komore')
     st.markdown('$d_{k} = d_{kr} \cdot \\frac{D_k}{d_{kr}}$')
     st.markdown(f'$ d_{{k}} = {dkr:.3f} \, \cdot \, {d_dkdr:.3f} = {dk:.3f} \\, \\text{{m}} $')
     
-    # lk - chamber length
+    # lk - chamber length ==============================
     st.markdown('$l_{k} = \\frac{V_{kom}}{\\frac{d_{k}^2 \cdot \\pi}{4}}$')
     # st.markdown(f'$ l_{{k}} = \\frac{{{Vkom:.3f}}}{{\\frac{{{dk:.3f}}^2 \cdot \\pi}}{{4}}}} = {lk:.3f} \\, \\text{{m}} $')
     st.markdown(f'$ l_{{k}} = \\frac{{ {Vkom:.3f} }}{{ \\frac{{ {dk:.3f}^2 \cdot \\pi }}{{ 4 }} }} = {lk:.3f} \\, \\text{{m}} $')
@@ -588,17 +625,25 @@ Mi_solution = {Mi_solution[0]:.4f}
     
     st.subheader("Poređenje rezultata")
     
-    st.markdown(f"""
-| Parameter                          | RPA Value                     | Analytical Value     | Difference             |
-|------------------------------------|-------------------------------|----------------------|------------------------|
-| Isp — Specific Impulse (Vac)       | `{isp_rpa*9.80665:.2f} Ns/Kg` | `{Isp:.2f} Ns/Kg`    | `{abs(isp_rpa*9.80665 - Isp):.2f} Ns/Kg` |
-| Cf – Thrust Coefficient (Vac)      | `{cf_rpa}`                    | `{Cf:.4f}`           | `{abs(cf_rpa - Cf):.4f}` |
-| F - Chamber Thrust (Vac)           | `{thrust_vac_rpa} kN`         | `{F/1000:.3f} kN`    | `{abs(thrust_vac_rpa - F/1000):.2f} kN` |
-| Fopt - Chamber Thrust (Opt)        | `{thrust_vac_rpa} kN`         | `{Fopt/1000:.3f} kN` | `{abs(thrust_vac_rpa - Fopt/1000):.2f} kN` |
-| Isp_opt - Specific Impulse (Opt)   | `{isp_opt_rpa*9.80665:.2f} Ns/Kg` | `{Isp_opt:.2f} Ns/Kg` | `{abs(isp_opt_rpa*9.80665 - Isp_opt):.2f} Ns/Kg` |
-| OF - Oxidizer/Fuel Ratio (OF)      | `{of_rpa:.3f}`                | `{OF:.3f}`           | `{abs(of_rpa - OF):.3f}` |
+    
 
-""", unsafe_allow_html=True)
+    st.markdown(f"""
+    | Parameter                          | RPA Value                     | Analytical Value     | Difference             |
+    |------------------------------------|-------------------------------|----------------------|------------------------|
+    | **Performanse**                    |                               |                      |                        |
+    | Isp — Specifični impuls (Vac)      | `{isp_rpa*9.80665:.2f} Ns/Kg` | `{Isp:.2f} Ns/Kg`    | `{abs(isp_rpa*9.80665 - Isp):.2f} Ns/Kg` |
+    | Cf – Koeficijent potiska (Vac)     | `{cf_rpa}`                    | `{Cf:.4f}`           | `{abs(cf_rpa - Cf):.4f}` |
+    | F - Potisak komore (Vac)           | `{thrust_vac_rpa} kN`         | `{F/1000:.3f} kN`    | `{abs(thrust_vac_rpa - F/1000):.2f} kN` |
+    | Fopt - Potisak komore (Opt)        | `{thrust_vac_rpa} kN`         | `{Fopt/1000:.3f} kN` | `{abs(thrust_vac_rpa - Fopt/1000):.2f} kN` |
+    | Isp_opt - Specifični impuls (Opt)  | `{isp_opt_rpa*9.80665:.2f} Ns/Kg` | `{Isp_opt:.2f} Ns/Kg` | `{abs(isp_opt_rpa*9.80665 - Isp_opt):.2f} Ns/Kg` |
+    | OF - Odnos oksidator/gorivo (OF)   | `{of_rpa:.3f}`                | `{OF:.3f}`           | `{abs(of_rpa - OF):.3f}`  |
+    | **Geometrija komore**              |                               |                      |                        |
+    | Dc - Prečnik komore                | `{dc_rpa} mm`                 | `{dk*1000:3f} mm`    | `{abs(dc_rpa-dk*1000):3f} |
+    | Dt - Prečnik grla mlaznika         | `{dt_rpa} mm`                 | `{dkr*1000:3f} mm`   | Placeholder            |
+    | De - Izlazni prečnik (presek)      | `{de_rpa} mm`                 | `{di*1000:3f} mm`   | Placeholder            |
+    | Lc - Dužina komore                 | `{lc_rpa} mm`                 | `{lk*1000:3f} mm`          | Placeholder            |
+    | Le - Dužina izlaza mlaznika        | `{le_rpa} mm`                 | Placeholder          | Placeholder            |
+    """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
