@@ -23,22 +23,23 @@ def format_scientific_latex(number, precision=3):
     return f"{number_parts[0]} \\times 10^{{{number_parts[1]}}}"
 
 
-# regex pattern for extracting values from RPA response
-def extract_values(rpa_response):
-    patterns = {
-        'isp': r"Specific impulse \(vac\):\s+([\d.]+)\s+s",
-        'cf': r"Thrust coefficient:\s+([\d.]+)\s+",
-        'thrust_vac': r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN",
-        'isp_opt': r"Specific impulse \(opt\):\s+([\d.]+)\s+s",
-        'ox_flow_rate': r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s",
-        'fuel_flow_rate': r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s",
-        'dc': r"Dc =\s+([\d.]+)\s+mm",
-        'dt': r"Dt =\s+([\d.]+)\s+mm",
-        'de': r"De =\s+([\d.]+)\s+mm",
-        'lc': r"Lc =\s+([\d.]+)\s+mm",
-        'le': r"Le =\s+([\d.]+)\s+mm"
-    }
+# regex patterns for extracting values from RPA response
+patterns = {
+    'isp': r"Specific impulse \(vac\):\s+([\d.]+)\s+s",
+    'cf': r"Thrust coefficient:\s+([\d.]+)\s+",
+    'thrust_vac': r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN",
+    'isp_opt': r"Specific impulse \(opt\):\s+([\d.]+)\s+s",
+    'ox_flow_rate': r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s",
+    'fuel_flow_rate': r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s",
+    'dc': r"Dc =\s+([\d.]+)\s+mm",
+    'dt': r"Dt =\s+([\d.]+)\s+mm",
+    'de': r"De =\s+([\d.]+)\s+mm",
+    'lc': r"Lc =\s+([\d.]+)\s+mm",
+    'le': r"Le =\s+([\d.]+)\s+mm"
+}
 
+# extract RPA values with regex patterns
+def extract_values(rpa_response):
     values = {}
     for key, pattern in patterns.items():
         match = re.search(pattern, rpa_response)
@@ -49,6 +50,16 @@ def extract_values(rpa_response):
             return None
     return values
 
+# validate user-submitted RPA output
+def validate_rpa_output(output):
+    validation_results = {}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, output)
+        if match:
+            validation_results[key] = True
+        else:
+            validation_results[key] = False
+    return validation_results
 
 
 def main():
@@ -95,13 +106,19 @@ Ova Python aplikacija koristi podatka iz programa [RPA Rocket Propulsion Analysi
             st.image('./assets/engine_definition.png', width=200)
         with col3:
             st.image('./assets/propellant_specification.png', width=200)
-    # Dropdown for fuel/oxidizer combination
-    propellant_options = ["Hidrazin / Tečni kiseonik"]
-    selected_fuel = st.selectbox("Izabrati kombinaciju Gorivo/Oksidator", propellant_options)
     
+    # RADIO options    
+    
+    propellant_options = ["Hidrazin / Tečni kiseonik"]
+    selected_propellant = st.selectbox("Gorivo/Oksidator", propellant_options)
+        
     if st.button("🖼️ Screenshot izbora goriva/oksidatora"):
         st.image('./assets/propellant_specification.png')
 
+    st.markdown("#### Opcija 1: Iskopirati ")
+
+
+    # download .cfg
     st.download_button('💾 Preuzmi RPA konfiguraciju (.cfg)', './rpa/hail_hydra2.cfg', 'hail_hydra2.cfg', 'text/plain')
 
     st.markdown('***')  
@@ -118,15 +135,15 @@ U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Izvlačen
     st.subheader("1.2.1. Izlaz is RPA (Engine Design)")
     
     #===================== regex output =====================#
-    st.markdown("""Pre svega se prikazuje RPA izlaz is sekcije **Engine design** jer većina podataka potrebnih za analitičko rešenje se nalazi u ovoj sekciji, a potrebno ih je izvući REGEX-om.""")
+    
     # RPA output        
-    rpa_response = """Thrust and mass flow rates
+    rpa_response_default = """Thrust and mass flow rates
 ------------------------------------------
-   Chamber thrust (vac):   22.54662     kN
- Specific impulse (vac):  320.78363      s
-   Chamber thrust (opt):   20.59155     kN
- Specific impulse (opt):  292.96779      s
-   Total mass flow rate:    7.16718   kg/s
+Chamber thrust (vac):   22.54662     kN
+Specific impulse (vac):  320.78363      s
+Chamber thrust (opt):   20.59155     kN
+Specific impulse (opt):  292.96779      s
+Total mass flow rate:    7.16718   kg/s
 Oxidizer mass flow rate:    3.28881   kg/s
     Fuel mass flow rate:    3.87837   kg/s
 
@@ -140,19 +157,39 @@ Geometry of thrust chamber with parabolic nozzle
     Rn =    5.98  mm      Tn =   22.43 deg
     Le =   99.24  mm      Te =    8.00 deg
     De =   82.88  mm
- Ae/At =    7.00    
- Le/Dt =    3.17    
+Ae/At =    7.00    
+Le/Dt =    3.17    
 Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
 
-  Mass =   16.24  kg
+Mass =   16.24  kg
 
-  Divergence efficiency:    0.99157       
+Divergence efficiency:    0.99157       
         Drag efficiency:    0.96223       
-     Thrust coefficient:    1.66246  (vac)
+    Thrust coefficient:    1.66246  (vac)
 """
+    if 'rpa_response' not in st.session_state:
+        st.session_state['rpa_response'] = rpa_response_default
+    
+    if st.button("📋 Kopiraj RPA izlaz"):
+        rpa_output = st.text_area("Paste RPA output here", height=300)
+        if st.button("Validiraj RPA izlaz"):
+            if rpa_output:
+                validation_results = validate_rpa_output(rpa_output)
+                if all(validation_results.values()):
+                    st.success("RPA izlaz je uspešno validiran.")
+                    st.session_state['rpa_response'] = rpa_output
+                else:
+                    st.error("RPA izlaz nije validan. Proverite sledeće vrednosti:")
+                    for key, valid in validation_results.items():
+                        if not valid:
+                            st.write(f"Vrednost za {key} nije pronađena ili je u pogrešnom formatu.")
+            else:
+                st.error("Morate uneti RPA izlaz.")
+    
     # display RPA output
+    rpa_response = st.session_state['rpa_response']
     st.code(rpa_response)
-        
+
     # regex pattern for extracting values from RPA response
     values = extract_values(rpa_response)
 
