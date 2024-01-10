@@ -73,12 +73,11 @@ def main():
     tooltip_message = "U budućim verzijama programa, planira se direktna integracija sa API-jem ili skriptom programa RPA."
     st.title("1. Korišćenje programa RPA", help=tooltip_message)
     st.markdown("""
-Ova Python aplikacija koristi podatka iz programa [RPA Rocket Propulsion Analysis](https://www.rocket-propulsion.com/index.htm). Za računanje performansi raketnog motora, potrebno je uneti ulazne parametre u sidebar sa leve strane.
-U budućim verzijama programa, planira se direktna integracija sa API-jem ili skriptom programa RPA.
+Ova Python aplikacija koristi podatka iz programa [RPA Rocket Propulsion Analysis](https://www.rocket-propulsion.com/index.htm) za računanje performansi raketnog motora.
 """)
     st.header("1.1. Ulazni podaci")
     st.markdown("""
-1. Podaci u sidebar-u levo **"Zadati ulazni podaci"** ubačeni su iz RPA izlaza, i mogu se izmeniti po potrebi. Isti podaci koriste se za analitičko rešenje (naredna sekcija 2.)
+1. Podaci u sidebar-u levo **"Zadati ulazni podaci"** ubačeni su u RPA grafički, a koriste se i za analitičko rešenje (naredna sekcija 2.). Mogu se izmeniti po potrebi, ali izmena neće uticati na izlaz iz RPA zbog nedovršene integracije za RPA API.
 2. **Ulazni podaci iz RPA** u sidebar-u dobijeni iz izlaza RPA, ali se mogu izmeniti po potrebi za testiranje analitičkog rešenja (npr. ako se želi izračunati drugačiji odnos mešanja goriva i oksidatora)
 3. Kombinacija gorivo/oksidator data je u dropdown meniju ispod. Za sad postoji samo jedna opcija, ali se planira integracija sa API-jem ili skriptom programa RPA u budućim verzijama ovog Python programa kako bi korisnici mogli direktno interagovati sa RPA odavde)
 """)
@@ -104,7 +103,7 @@ U budućim verzijama programa, planira se direktna integracija sa API-jem ili sk
     #===================== 2. OUTPUT DATA =====================#
     #==========================================================#
     
-    st.header("1.2. Izlazni podaci")
+    st.header("1.2. Performanse idealnog raketnog motora")
     st.markdown("""
 U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Unos podataka je maksimalno automatizovan, ali zbog nedovršene integracije podaci su uneti manualno, u formama:
 - `pandas dataframe()` za tabelarne podatke
@@ -115,41 +114,38 @@ U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Unos poda
     
     st.subheader("1.2.1. Performanse raketnog motora")
     
-    
     #===================== regex output =====================#
     st.markdown("""Pre svega se prikazuje RPA izlaz is sekcije **Engine design** jer većina podataka potrebnih za analitičko rešenje se nalazi u ovoj sekciji, a potrebno ih je izvući REGEX-om.""")
     # RPA output        
     rpa_response = """Thrust and mass flow rates
 ------------------------------------------
-   Chamber thrust (vac):   22.54541     kN
- Specific impulse (vac):  321.13823      s
-   Chamber thrust (opt):   20.59261     kN
- Specific impulse (opt):  293.32238      s
-   Total mass flow rate:    7.15889   kg/s
-Oxidizer mass flow rate:    3.28500   kg/s
-    Fuel mass flow rate:    3.87388   kg/s
+   Chamber thrust (vac):   22.54662     kN
+ Specific impulse (vac):  320.78363      s
+   Chamber thrust (opt):   20.59155     kN
+ Specific impulse (opt):  292.96779      s
+   Total mass flow rate:    7.16718   kg/s
+Oxidizer mass flow rate:    3.28881   kg/s
+    Fuel mass flow rate:    3.87837   kg/s
 
-Geometry of thrust chamber with truncated ideal contour (TIC) nozzle
-(designed using method of characteristics)
+Geometry of thrust chamber with parabolic nozzle
 ------------------------------------------
-    Dc =   54.22  mm       b =   30.00 deg
-    R2 =    2.64  mm      R1 =    0.37  mm
+    Dc =   54.26  mm       b =   30.00 deg
+    R2 =   31.04  mm      R1 =   23.49  mm
     L* = 1000.00  mm
-    Lc =  340.61  mm    Lcyl =  319.95  mm
-    Dt =   31.31  mm
-    Rn =   11.96  mm      Tn =   20.83 deg (max)
-    Le =  104.07  mm      Te =    5.96 deg
-    De =   82.83  mm
+    Lc =  345.01  mm    Lcyl =  310.54  mm
+    Dt =   31.32  mm
+    Rn =    5.98  mm      Tn =   22.43 deg
+    Le =   99.24  mm      Te =    8.00 deg
+    De =   82.88  mm
  Ae/At =    7.00    
- Le/Dt =    3.32    
-Le/c15  =  107.37 % (relative to length of cone nozzle with Te=15 deg)
+ Le/Dt =    3.17    
+Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
 
-  Mass =   16.48  kg
+  Mass =   16.24  kg
 
-                  Tw/T0:    0.20000       
-  Divergence efficiency:    0.99928       
-        Drag efficiency:    0.97843       
-     Thrust coefficient:    1.66117  (vac)
+  Divergence efficiency:    0.99157       
+        Drag efficiency:    0.96223       
+     Thrust coefficient:    1.66246  (vac)
 """
     # display RPA output
     st.code(rpa_response)
@@ -158,7 +154,7 @@ Le/c15  =  107.37 % (relative to length of cone nozzle with Te=15 deg)
     values = extract_values(rpa_response)
 
     st.write("Ovaj program izvlaci vrednosti iz RPA izlaza koristeci REGEX pattern za svaku vrednost. Vrednosti se mogu naci u sidebar-u levo i izmeniti po potrebi.")
-    st.markdown("###### podaci izvučeni REGEX-om:")
+    st.markdown("##### Podaci izvučeni REGEX-om:")
     
     if values:
         isp_rpa = values['isp']
@@ -239,14 +235,15 @@ Le/c15  =  107.37 % (relative to length of cone nozzle with Te=15 deg)
 # 5. Stepen širenja: 𝜀 = 7
 # 6. Odnost prečnika komore i grla mlaznika Dk/dkr=3
 # 7. Karakteristična dužina L*=1m''')
-
+#    Protok mase oksidatora = {ox_flow_rate_rpa} kg/s
+#         Protok mase goriva = {fuel_flow_rate_rpa
 
     # mox
     # mox = OF * mg
-    mox = 4.14013
+    mox = ox_flow_rate_rpa
     st.code('1. Maseni protok oksidatora:')
     st.markdown('$m_{ox} = OF \cdot mg$')
-    st.markdown(f'$ m_{{ox}} = {OF:.0f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
+    st.markdown(f'$ m_{{ox}} = {OF:.3f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
     spacer()
 
     # Akr
