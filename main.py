@@ -62,6 +62,10 @@ def validate_rpa_output(output):
     return validation_results
 
 
+#===========================================================#
+#===================== MAIN APP ============================#
+#===========================================================#
+
 def main():
 
     # intro
@@ -405,15 +409,15 @@ Divergence efficiency:    0.99157
     # 4. Chamber Diameter and Length ==============================
     # TODO numbers???
     dk = dkr * d_dkdr
-    lk = Vkom / (dk**2 * 3.14159 / 4)
     st.code('4. Precnik i duzina komore')
     st.markdown('$d_{k} = d_{kr} \cdot \\frac{D_k}{d_{kr}}$')
     st.markdown(f'$ d_{{k}} = {dkr:.3f} \, \cdot \, {d_dkdr:.3f} = {dk:.3f} \\, \\text{{m}} $')
     
     # lk - chamber length ==============================
+    lk = Vkom / (dk**2 * 3.14159 / 4)
     st.markdown('$l_{k} = \\frac{V_{kom}}{\\frac{d_{k}^2 \cdot \\pi}{4}}$')
     # st.markdown(f'$ l_{{k}} = \\frac{{{Vkom:.3f}}}{{\\frac{{{dk:.3f}}^2 \cdot \\pi}}{{4}}}} = {lk:.3f} \\, \\text{{m}} $')
-    st.markdown(f'$ l_{{k}} = \\frac{{ {Vkom:.3f} }}{{ \\frac{{ {dk:.3f}^2 \cdot \\pi }}{{ 4 }} }} = {lk:.3f} \\, \\text{{m}} $')
+    st.markdown(f'$ l_{{k}} = \\frac{{ {Vkom:.5f} }}{{ \\frac{{ {dk:.3f}^2 \cdot \\pi }}{{ 4 }} }} = {lk:.3f} \\, \\text{{m}} $')
     lk_sci = format_scientific_latex(lk)
     st.markdown(f'> $ l_{{k}} = {lk_sci} \\, \\text{{m}} $')
     spacer()
@@ -432,11 +436,11 @@ Divergence efficiency:    0.99157
     # -----------------fsolve---------------------#
     # mach
     st.markdown('***') 
-    st.code('Odredjivanje Mahovog broja na izlazu mlaznika')
+    st.code('6. Odredjivanje Mahovog broja na izlazu mlaznika')
 
-    st.markdown(f'$\epsilon_{{i_opt}} = {epsilon_i:.2f}$', help='zadati stepen sirenja mlaznika, izmeniti u sidebar-u')
+    st.markdown(f'$\epsilon_{{i}} = {epsilon_i:.2f}$', help='zadati stepen sirenja mlaznika, izmeniti u sidebar-u')
     st.markdown(r'''
-        $ \epsilon_{i opt} = \frac{
+        $ \epsilon_{i} = \frac{
         \left(1 + \frac{\kappa - 1}{2} \cdot M_{iter}^2\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
         }{
         M_{iter} \left(\frac{\kappa + 1}{2}\right)^{\frac{\kappa + 1}{2(\kappa - 1)}}
@@ -524,23 +528,23 @@ Mi_solution = {Mi_solution[0]:.4f}
     # Calculate optimal nozzle exit area
     Aiopt = e_i_opt * Akr
     st.markdown(r'''
-    $$ A_{opt} = \epsilon_{i opt} \cdot A_{kr} $$
+    $$ A_{i_{opt}} = \epsilon_{i opt} \cdot A_{kr} $$
     ''')
     st.markdown(f'''
-        $ A_{{opt}} = {e_i_opt:.3f} \cdot {Akr:.3f} = {Aiopt:.5f} \\, \\text{{m}}^2 $
+        $ A_{{i_{{opt}}}} = {e_i_opt:.3f} \cdot {Akr:.3f} = {Aiopt:.5f} \\, \\text{{m}}^2 $
     ''')
     Aiopt_sci = format_scientific_latex(Aiopt)
-    st.markdown(f'> $ A_{{opt}} = {Aiopt_sci} \\, \\text{{m}}^2 $')
+    st.markdown(f'> $ A_{{i{{opt}}}} = {Aiopt_sci} \\, \\text{{m}}^2 $')
     spacer()
 
     # Calculate optimal nozzle exit diameter
     st.code('izlazni precnik')
     diopt = (Aiopt * 4 / 3.14159)**0.5
     st.markdown(r'''
-    $$ d_{iopt} = \sqrt{A_{iopt} \cdot \frac{4}{\pi}} $$
+    $$ d_{i_{opt}} = \sqrt{A_{i_{opt}} \cdot \frac{4}{\pi}} $$
     ''')
     st.markdown(f'''
-        $ d_{{iopt}} = \sqrt{{ {Aiopt:.3f} \\cdot \\frac{{4}}{{\\pi}} }} = {diopt:.3f} \\, \\text{{m}}^2 $
+        $ d_{{i_{{opt}}}} = \sqrt{{ {Aiopt:.4f} \\cdot \\frac{{4}}{{\\pi}} }} = {diopt:.3f} \\, \\text{{m}}^2 $
     ''')
     diopt_sci = format_scientific_latex(diopt)
     st.markdown(f'> $ d_{{iopt}} = {diopt_sci} \\, \\text{{m}} $')
