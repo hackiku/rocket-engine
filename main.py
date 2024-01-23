@@ -143,33 +143,33 @@ U ovoj sekciji aplikacije prikazani su izlazni podaci iz programa RPA. Izvlačen
     # RPA output        
     rpa_response_default = """Thrust and mass flow rates
 ------------------------------------------
-Chamber thrust (vac):   22.54662     kN
-Specific impulse (vac):  320.78363      s
-Chamber thrust (opt):   20.59155     kN
-Specific impulse (opt):  292.96779      s
-Total mass flow rate:    7.16718   kg/s
-Oxidizer mass flow rate:    3.28881   kg/s
-    Fuel mass flow rate:    3.87837   kg/s
+   Chamber thrust (vac):   22.53665     kN
+ Specific impulse (vac):  320.80146      s
+   Chamber thrust (opt):   20.58303     kN
+ Specific impulse (opt):  292.99241      s
+   Total mass flow rate:    7.16362   kg/s
+Oxidizer mass flow rate:    3.28718   kg/s
+    Fuel mass flow rate:    3.87644   kg/s
 
 Geometry of thrust chamber with parabolic nozzle
 ------------------------------------------
-    Dc =   54.26  mm       b =   30.00 deg
-    R2 =   31.04  mm      R1 =   23.49  mm
+    Dc =   80.32  mm       b =   30.00 deg
+    R2 =   80.33  mm      R1 =   23.28  mm
     L* = 1000.00  mm
-    Lc =  345.01  mm    Lcyl =  310.54  mm
-    Dt =   31.32  mm
-    Rn =    5.98  mm      Tn =   22.43 deg
-    Le =   99.24  mm      Te =    8.00 deg
-    De =   82.88  mm
-Ae/At =    7.00    
-Le/Dt =    3.17    
-Le/c15  =  102.32 % (relative to length of cone nozzle with Te=15 deg)
+    Lc =  177.26  mm    Lcyl =  106.81  mm
+    Dt =   31.04  mm
+    Rn =    5.93  mm      Tn =   22.42 deg
+    Le =   98.33  mm      Te =    8.00 deg
+    De =   82.12  mm
+ Ae/At =    7.00    
+ Le/Dt =    3.17    
+Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
 
-Mass =   16.24  kg
+  Mass =    9.99  kg
 
-Divergence efficiency:    0.99157       
+  Divergence efficiency:    0.99157       
         Drag efficiency:    0.96223       
-    Thrust coefficient:    1.66246  (vac)
+     Thrust coefficient:    1.66234  (vac)
 """
     if 'rpa_response' not in st.session_state:
         st.session_state['rpa_response'] = rpa_response_default
@@ -272,7 +272,8 @@ Divergence efficiency:    0.99157
         d_dkdr = st.number_input('Precnik komore / grla mlaznika (d_dkdr)', value=3.0)
         Lstar = st.number_input('Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
         
-        st.markdown('***')
+        st.markdown('***') # ------------
+        
         tooltip_sidebar = "vrednosti izvučene REGEX analizom RPA izlaza"
         st.title("Ulazni podaci iz RPA", help=tooltip_sidebar)
         
@@ -355,52 +356,48 @@ Divergence efficiency:    0.99157
 #    Protok mase oksidatora = {ox_flow_rate_rpa} kg/s
 #         Protok mase goriva = {fuel_flow_rate_rpa
 
-    method = st.radio(
-    "Izaberite metod za izračunavanje masenog protoka:",
-    ('Izračunajte pomoću C* vrednosti', 'Koristi RPA masene protoke')
-    )
-
-    if method == 'Koristi RPA masene protoke':
-        # Use RPA values directly
-        mox = ox_flow_rate_rpa
-        mg = fuel_flow_rate_rpa
-    else:
-        # Calculate using C* value
-        dkr = dt_rpa # throat diameter from RPA regex
-        Akr = (dkr**2 * 3.14159) / 4  # Assuming dkr is the throat diameter
-        mox = P * Akr / Cstar  # Oxidizer mass flow rate
-        mg = mox / OF  # Fuel mass flow rate
-
-    st.code(f"dkr = {dkr:.3f} m")
-    st.code(f"Akr = {Akr:.3f} m^2")
-    st.code(f"mox = {mox:.3f} kg/s")
-    st.code(f"mg = {mg:.3f} kg/s")
-
-    # mass flow rates ==============================
-    # mox = OF * mg
-    st.code('1. Maseni protoci:')
-    st.markdown(f'$m_{{g}} = {mg:.3f} \\, \\text{{kg/s}} $')
-    st.markdown('$m_{ox} = OF \cdot m_{g}$')
-    st.markdown(f'$ m_{{ox}} = {OF:.3f} \cdot {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $', unsafe_allow_html=True)
-    spacer()
-
-    # Akr ==============================
-    Akr = Cstar * (mg + mox) / P
-    dkr = (Akr * 4 / 3.14159)**0.5
-    st.code('2. Kriticni presek i precnik mlaznika:')
-    st.markdown('$ A_{kr} = \\frac{C_{star} \cdot (mg + m_{ox})}{P}$')
-    st.markdown(f'$ A_{{kr}} = \\frac{{ {Cstar:.3f} \, \cdot \, ({mg:.3f} + {mox:.3f}) }}{{ {P:.3f} }} = {Akr:.6f} \\, m^2 $')    
-    # scientific notation Akr
+    # 1. Akr ==============================
+    st.code('1. Kriticni presek i precnik mlaznika:')
+    dkr = dt_rpa/1000 # throat area in meters
+    dkr_sci = format_scientific_latex(dkr)
+    
+    col1, col2 = st.columns([3,4])
+    with col1:
+        st.markdown(f'$ d_{{kr}} = {dkr:.4f} \\, \\text{{m}} $')
+        st.markdown(f'> $ d_{{kr}} = {dkr_sci} \\, \\text{{m}} $')
+    with col2:
+        st.text('vrednost iz RPA izlaza')
+    
+    spacer('2em')
+    
+    Akr = dkr**2 * 3.14159 / 4
+    st.markdown('$ A_{kr} = d_{kr}^2 \cdot \\frac{\\pi}{4}$')
+    st.markdown(f'$ A_{{kr}} = {dkr:.5f}^2 \cdot \\frac{{\\pi}}{{4}} = {Akr:.5f} \\, m^2 $')
     Akr_sci = format_scientific_latex(Akr)
     st.markdown(f'> $ A_{{kr}} = {Akr_sci} \\, m^2 $')
     
-    spacer('2em')
-    st.markdown('$d_{kr} = \\sqrt{A_{kr} \cdot \\frac{4}{\\pi}}$')
-    st.markdown(f'$ d_{{kr}} = \\sqrt{{{Akr:.5f} \cdot \\frac{{4}}{{\\pi}}}} = {dkr:.5f} \\, \\text{{m}} $', unsafe_allow_html=True)
-    dkr_sci = format_scientific_latex(dkr)
-    st.markdown(f'> $ d_{{kr}} = {dkr_sci} \\, \\text{{m}} $')
+    spacer()
+
+    # mass flow rates ==============================
+    # mox = OF * mg
+    st.code('2. Maseni protoci:')
+    
+    P_sci = format_scientific_latex(P)
+    st.markdown(f'$ C_{{star}} = {Cstar:.2f} \\, \\text{{m/s}} $')
+   
+    spacer('1em') 
+    m_dot = P * Akr / Cstar # total mass flow rate
+    st.markdown(f'$\dot{{m}} = \\frac{{P \cdot A_{{kr}}}} {{ C_{{star}} }} $')
+    st.markdown(f'$\dot{{m}} = \\frac{{{P_sci} \cdot \\, {Akr:.5f}}} {{ {Cstar:.2f} }} = {m_dot:.3f} \\, \\text{{kg/s}} $')
+
+    spacer('1em')
+    mg = m_dot / (1 + OF) # fuel mass flow rate
+    mox = m_dot - mg # oxidizer mass flow rate
+    st.markdown(f'$ m_{{g}} = \dot{{m}} \cdot \\frac{{1}}{{OF + 1}} = {m_dot:.3f} \cdot \\frac{{1}}{{{OF:.3f} + 1}} = {mg:.3f} \\, \\text{{kg/s}} $')
+    st.markdown(f'$ m_{{ox}} = \dot{{m}} - m_{{g}} = {m_dot:.3f} - {mg:.3f} = {mox:.3f} \\, \\text{{kg/s}} $')
     
     spacer()
+
 
     # Vkom ==============================
     Vkom = Lstar * Akr
