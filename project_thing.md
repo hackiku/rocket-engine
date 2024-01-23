@@ -33,3 +33,33 @@ Principijelno, ovakav zadatak bi trebao da bude deo vaseg seminarskog
 rada uz primenu programa RPA.
 
 Pozdrav
+
+--------------------
+
+# fdbk
+
+sve najbolje u Novoj godini. Ovo su odgovori na tvoja pitanja:
+
+-masene protoke izracunavas preko C* i F (C* koristis iz programa)
+
+-odnos mesanja je ok.
+
+-dovoljno je ono sto si stavio za geometriju mlaznika.
+
+-kapa ti izracunava RPA. Ako mislis koje kapa da uzmes za analiticki proracun,
+
+uzmi vrednost kapa iz komore.
+
+-koristi realnu C*.
+
+U tvom analitickom racunu se razlikuje ulazni parametar odnos precnika komore i grla mlaznika
+
+u odnosu na RPA: u RPA ulaz je odnos preseka, a kod tebe je odnos precnika pa ti  je zato razlicit precnik
+
+i duzina komore u odnosu na RPA.
+
+Pozdrav
+
+
+
+

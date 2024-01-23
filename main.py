@@ -341,6 +341,7 @@ Divergence efficiency:    0.99157
     #======================================================#
     #===================== ANALYTICAL =====================#
     #======================================================#
+    st.markdown('***')
     
     st.title('Analitičko rešenje')
     st.markdown('**zadate vrednosti**')
@@ -356,7 +357,7 @@ Divergence efficiency:    0.99157
 
     method = st.radio(
     "Izaberite metod za izračunavanje masenog protoka:",
-    ('Koristi RPA masene protoke', 'Izračunajte pomoću C* vrednosti')
+    ('Izračunajte pomoću C* vrednosti', 'Koristi RPA masene protoke')
     )
 
     if method == 'Koristi RPA masene protoke':
@@ -369,6 +370,11 @@ Divergence efficiency:    0.99157
         Akr = (dkr**2 * 3.14159) / 4  # Assuming dkr is the throat diameter
         mox = P * Akr / Cstar  # Oxidizer mass flow rate
         mg = mox / OF  # Fuel mass flow rate
+
+    st.code(f"dkr = {dkr:.3f} m")
+    st.code(f"Akr = {Akr:.3f} m^2")
+    st.code(f"mox = {mox:.3f} kg/s")
+    st.code(f"mg = {mg:.3f} kg/s")
 
     # mass flow rates ==============================
     # mox = OF * mg
@@ -666,7 +672,7 @@ Mi_solution = {Mi_solution[0]:.4f}
     
     st.subheader("Poređenje rezultata")
     
-    
+    st.code(kappa)
 
     st.markdown(f"""
     | Parameter                          | RPA Value                     | Analytical Value     | Difference             |
