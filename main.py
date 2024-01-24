@@ -28,6 +28,7 @@ patterns = {
     'isp': r"Specific impulse \(vac\):\s+([\d.]+)\s+s",
     'cf': r"Thrust coefficient:\s+([\d.]+)\s+",
     'thrust_vac': r"Chamber thrust \(vac\):\s+([\d.]+)\s+kN",
+    'thrust_opt': r"Chamber thrust \(opt\):\s+([\d.]+)\s+kN",
     'isp_opt': r"Specific impulse \(opt\):\s+([\d.]+)\s+s",
     'ox_flow_rate': r"Oxidizer mass flow rate:\s+([\d.]+)\s+kg/s",
     'fuel_flow_rate': r"Fuel mass flow rate:\s+([\d.]+)\s+kg/s",
@@ -204,6 +205,7 @@ Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
         isp_rpa = values['isp']
         cf_rpa = values['cf']
         thrust_vac_rpa = values['thrust_vac']
+        thrust_opt_rpa = values['thrust_opt']
         isp_opt_rpa = values['isp_opt']
         ox_flow_rate_rpa = values['ox_flow_rate']
         fuel_flow_rate_rpa = values['fuel_flow_rate']
@@ -223,6 +225,7 @@ Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
         Isp (vakuum) = {isp_rpa} s
         Cf (vakuum) = {cf_rpa}
         Potisak komore (vakuum) = {thrust_vac_rpa} kN
+        Potisak komore (optimalni) = {thrust_opt_rpa} kN
         Specifični impuls (optimalno) = {isp_opt_rpa} s
         Protok mase oksidatora = {ox_flow_rate_rpa} kg/s
         Protok mase goriva = {fuel_flow_rate_rpa} kg/s
@@ -260,30 +263,30 @@ Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
         # Inputs for the variables
         st.title("Zadati ulazni podaci")
         
-        Pa_atm = st.number_input('Atmosferski pritisak (atm)', value=1)
+        Pa_atm = st.number_input('Atmosferski pritisak `Pa` [atm]', value=1)
         Pa = Pa_atm * 101325
         st.text(f'P = {Pa} = {Pa:.1e} Pa')
-        P_bar = st.number_input('Pritisak u komori (bar)', value=180)
+        P_bar = st.number_input('Pritisak u komori `P` [bar]', value=180)
         P = P_bar * 100000
         st.text(f'P = {P} Pa = {P:.1e} Pa')  # Display chamber pressure in Pascals with both formats
 
-        F = st.number_input('Sila potiska kN', value = 22)
-        epsilon_i = st.number_input('Stepen sirenja mlaznika (epsilon_i)', value=7.0)
-        d_dkdr = st.number_input('Precnik komore / grla mlaznika (d_dkdr)', value=3.0)
-        Lstar = st.number_input('Karakteristicna duzina (Lstar)', value=1.0, step=1.0)
+        F = st.number_input('Sila potiska `F` [kN]', value = 22)
+        epsilon_i = st.number_input('Stepen sirenja mlaznika `epsilon_i`', value=7.0)
+        d_dkdr = st.number_input('Precnik komore / grla mlaznika `d_dkdr`', value=3.0)
+        Lstar = st.number_input('Karakteristicna duzina `Lstar` [m]', value=1.0, step=1.0)
         
         st.markdown('***') # ------------
         
         tooltip_sidebar = "vrednosti izvučene REGEX analizom RPA izlaza"
         st.title("Ulazni podaci iz RPA", help=tooltip_sidebar)
         
-        mg = st.number_input('Maseni protok goriva (mg)', value=fuel_flow_rate_rpa, step=1.0) 
-        OF = st.number_input('Odnos mesanja oksidator/gorivo (OF)', value=of_rpa, step=1.0)
-        mox = st.number_input('Maseni protok oksidatora (mox)', value=ox_flow_rate_rpa, step=1.0)
+        mg = st.number_input('Maseni protok goriva `mg` [Kg/s]', value=fuel_flow_rate_rpa, step=1.0) 
+        OF = st.number_input('Odnos mesanja oksidator/gorivo `OF`', value=of_rpa, step=1.0)
+        mox = st.number_input('Maseni protok oksidatora `mox` [Kg/s]', value=ox_flow_rate_rpa, step=1.0)
         # propellant.components.ratio.value = 5.9
-        Cstar = st.number_input('Karakteristicna brzina (Cstar)', value=Cstar_rpa, step=100.0)
-        R = st.number_input('Gasna konstanta (R)', value=380.4, step=1.0)
-        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini (kappa)', value=1.2022)
+        Cstar = st.number_input('Karakteristicna brzina `Cstar` [m/s]', value=Cstar_rpa, step=100.0)
+        R = st.number_input('Gasna konstanta `R` [J/Kg·K]', value=433.5, step=1.0, help="hidrazin/tečni kiseonik u komori, 'nozzle inlet' u RPA")
+        kappa = st.number_input('Odnos specificnih toplota pri konstantnom pritisku i zapremini `kappa`', value=1.1716, format='%.4f', step=0.01, help="kappa u komori, 'nozzle inlet' u RPA")
     
     #===================== 1.2.2 PERFORMANCE =====================#
     st.subheader("1.2.2. Analiza performansi")
@@ -398,7 +401,6 @@ Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
     
     spacer()
 
-
     # Vkom ==============================
     Vkom = Lstar * Akr
     st.code('3. Zapremina komore:')
@@ -430,7 +432,7 @@ Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
     Ai = epsilon_i * Akr
     di = (Ai * 4 / 3.14159)**0.5
     st.markdown('$A_{i} = \\epsilon_i \cdot A_{kr}$')
-    st.markdown(f'$ A_{{i}} = {epsilon_i:.3f} \\cdot {Akr:.3f} = {Ai:.5f} \\, \\text{{m}}^{{2}} $')
+    st.markdown(f'$ A_{{i}} = {epsilon_i:.3f} \\cdot {Akr:.5f} = {Ai:.5f} \\, \\text{{m}}^{{2}} $')
     st.markdown('$d_{i} = \\sqrt{\\frac{A_{i} \cdot 4}{\\pi}}$')
     st.markdown(f'$ d_{{i}} = \\sqrt{{\\frac{{{Ai:.3f} \\cdot 4}}{{\\pi}}}} = {di:.3f} \\, \\text{{m}} $')
     di_sci = format_scientific_latex(di)
@@ -599,18 +601,19 @@ Mi_solution = {Mi_solution[0]:.4f}
     Vi_opt_sci = format_scientific_latex(Vi_opt)
     st.markdown(f'> $ V_{{iopt}} = {Vi_opt_sci} \\, \\text{{m/s}} $')
     
+    # ===================== thrust ===================== #
     # Thrust at given expansion ratio
-    st.code('11. Potisak pri zadanom stepenu sirenja')
-    F = (mox + mg) * Vi + Ai * (pi - Pa)
-    st.markdown(r'''
-        $$ F = (m_{ox} + m_{g}) \cdot V_{i} + A_{i} \cdot (p_{i} - p_{a}) $$
-    ''')
-    st.markdown(f'''
-        $ F = ({mox:.3f} + {mg:.3f}) \cdot {Vi:.3f} + {Ai:.3f} \cdot ({pi:.3f} - {Pa:.3f}) = {F:.3f} \\, \\text{{N}} $
-    ''')
+    st.code('11. Zadata sila potiska')
+    F = F * 1000 # kN to N    
+    st.markdown(f'$ F = {F:.2f} \\, \\text{{N}} $')
     F_sci = format_scientific_latex(F)
     st.markdown(f'> $ F = {F_sci} \\, \\text{{N}} $')
     spacer()
+    
+    # F = (mox + mg) * Vi + Ai * (pi - Pa)
+    # st.markdown(f'''
+    #     $ F = ({mox:.3f} + {mg:.3f}) \cdot {Vi:.3f} + {Ai:.3f} \cdot ({pi:.3f} - {Pa:.3f}) = {F:.3f} \\, \\text{{N}} $
+    # ''')
 
     # Thrust at optimal expansion ratio
     Fopt = (mox + mg) * Vi_opt
@@ -624,15 +627,16 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'> $ F_{{opt}} = {Fopt_sci} \\, \\text{{N}} $')
     spacer()
 
-    # Thrust Coefficient
+    # Thrust Coefficient ============================================
     st.code('12. Koeficijent potiska')
+    
     Cf = F / (P * Akr)
     st.markdown(r'''
         $$ C_f = \frac{F}{P \cdot A_{kr}} $$
     ''')
-    st.markdown(f'''
-        $ C_f = \\frac{{ {F:.3f} }}{{ {P:.3f} \\cdot {Akr:.5f} }} = {Cf:.3f} $
-    ''')
+    # st.markdown(f'''
+    #     $ C_f = \\frac{{ {F:.0f} }}{{ {P:.0f} \\cdot {Akr:.5f} }} = {Cf:.3f} $
+    # ''')
     # scientific notation Cf variant
     P_sci = format_scientific_latex(P)
     st.markdown(f'''
@@ -641,7 +645,7 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'> $ C_f = {Cf:.3f} $')
     spacer()
 
-    # Specific Impulse at Given Expansion Ratio
+    # Specific Impulse at Given Expansion Ratio =======================
     st.code('13. Specifični impuls pri zadanom stepenu sirenja')
     Isp = F / (mox + mg)
     Isp_sec = Isp / 9.80665
@@ -664,31 +668,36 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(f'''
         $ I_{{sp_{{opt}}}} = \\frac{{ {Fopt:.3f} }}{{ ({mox:.3f} + {mg:.3f}) }} = {Isp_opt:.3f} \\, \\text{{Ns/kg}}  = {Isp_opt_sec:.2f} \\, \\text{{s}}$
     ''', help='Isp/g = value in seconds')
-    st.markdown(f'> $ I_{{sp_{{opt}}}} = {Isp_opt:.2f} \\, \\text{{Ns/kg}} $')
+    st.markdown(f'> $ I_{{sp_{{opt}}}} = {Isp_opt:.2f} \\, \\text{{Ns/Kg}} $')
     spacer()
     
+    # ===================== COMPARISON TABLE ===================== #
     st.subheader("Poređenje rezultata")
     
     st.code(kappa)
 
+    g = 9.80665
+    
+
     st.markdown(f"""
-    | Parameter                          | RPA Value                     | Analytical Value     | Difference             |
-    |------------------------------------|-------------------------------|----------------------|------------------------|
-    | **Performanse**                    |                               |                      |                        |
-    | Isp — Specifični impuls (Vac)      | `{isp_rpa*9.80665:.2f} Ns/Kg` | `{Isp:.2f} Ns/Kg`    | `{abs(isp_rpa*9.80665 - Isp):.2f} Ns/Kg` |
-    | Cf – Koeficijent potiska (Vac)     | `{cf_rpa}`                    | `{Cf:.4f}`           | `{abs(cf_rpa - Cf):.4f}` |
-    | F - Potisak komore (Vac)           | `{thrust_vac_rpa} kN`         | `{F/1000:.3f} kN`    | `{abs(thrust_vac_rpa - F/1000):.2f} kN` |
-    | Fopt - Potisak komore (Opt)        | `{thrust_vac_rpa} kN`         | `{Fopt/1000:.3f} kN` | `{abs(thrust_vac_rpa - Fopt/1000):.2f} kN` |
-    | Isp_opt - Specifični impuls (Opt)  | `{isp_opt_rpa*9.80665:.2f} Ns/Kg` | `{Isp_opt:.2f} Ns/Kg` | `{abs(isp_opt_rpa*9.80665 - Isp_opt):.2f} Ns/Kg` |
-    | OF - Odnos oksidator/gorivo (OF)   | `{of_rpa:.3f}`                | `{OF:.3f}`           | `{abs(of_rpa - OF):.3f}`  |
-    | **Geometrija komore**              |                               |                      |                        |
-    | Dc - Prečnik komore                | `{dc_rpa} mm`                 | `{dk*1000:3f} mm`    | `{abs(dc_rpa-dk*1000):3f} |
-    | Dt - Prečnik grla mlaznika         | `{dt_rpa} mm`                 | `{dkr*1000:3f} mm`   | Placeholder            |
-    | De - Izlazni prečnik (presek)      | `{de_rpa} mm`                 | `{di*1000:3f} mm`   | Placeholder            |
-    | Lc - Dužina komore                 | `{lc_rpa} mm`                 | `{lk*1000:3f} mm`          | Placeholder            |
-    | Le - Dužina izlaza mlaznika        | `{le_rpa} mm`                 | Placeholder          | Placeholder            |
+    | Parameter                          | RPA Value                     | Analytical Value     | Difference             | % Difference          |
+    |------------------------------------|-------------------------------|----------------------|------------------------|-----------------------|
+    | **Performanse**                    |                               |                      |                        |                       |
+    | Isp — Specifični impuls (Vac)      | `{isp_rpa*g:.2f} Ns/Kg` | `{Isp:.2f} Ns/Kg`    | `{(isp_rpa*g - Isp):.2f} Ns/Kg` | `{((isp_rpa*g - Isp) / Isp * 100):.2f}%` |
+    | Cf – Koeficijent potiska (Vac)     | `{cf_rpa}`                    | `{Cf:.4f}`           | `{(cf_rpa - Cf):.4f}` | `{((cf_rpa - Cf) / Cf * 100):.2f}%` |
+    | F - Potisak komore (Vac)           | `{thrust_vac_rpa} kN`         | `{F/1000:.3f} kN`    | `{(thrust_vac_rpa - F/1000):.2f} kN` | `{((thrust_vac_rpa - F/1000) / (F/1000) * 100):.2f}%` |
+    | Fopt - Potisak komore (Opt)        | `{thrust_opt_rpa} kN`         | `{Fopt/1000:.3f} kN` | `{(thrust_vac_rpa - Fopt/1000):.2f} kN` | `{((thrust_opt_rpa - Fopt/1000) / (Fopt/1000) * 100):.2f}%` |
+    | Isp_opt - Specifični impuls (Opt)  | `{isp_opt_rpa*g:.2f} Ns/Kg` | `{Isp_opt:.2f} Ns/Kg` | `{(isp_opt_rpa*g - Isp_opt):.2f} Ns/Kg` | `{((isp_opt_rpa*g - Isp_opt) / Isp_opt * 100):.2f}%` |
+    | OF - Odnos oksidator/gorivo (OF)   | `{of_rpa:.3f}`                | `{OF:.3f}`           | `{(of_rpa - OF):.3f}`   | `{((of_rpa - OF) / OF * 100):.2f}%`   |
+    | **Geometrija komore**              |                               |                      |                            |                       |
+    | Dc - Prečnik komore                | `{dc_rpa} mm`                 | `{dk*1000:.3f} mm`   | `{(dc_rpa-dk*1000):.3f}` | `{((dc_rpa - dk*1000) / (dk*1000) * 100):.2f}%` |
+    | Dt - Prečnik grla mlaznika         | `{dt_rpa} mm`                 | `{dkr*1000:.3f} mm`  | `{(dt_rpa-dkr*1000):.3f}`| `{((dt_rpa - dkr*1000) / (dkr*1000) * 100):.2f}%`|
+    | De - Izlazni prečnik (presek)      | `{de_rpa} mm`                 | `{diopt*1000:.3f} mm`   | `{(de_rpa-di*1000):.3f}` | `{((de_rpa - di*1000) / (di*1000) * 100):.2f}%` |
+    | Lc - Dužina komore                 | `{lc_rpa} mm`                 | `{lk*1000:.3f} mm`   | `{(lc_rpa-lk*1000):.3f}` | `{((lc_rpa - lk*1000) / (lk*1000) * 100):.2f}%` |
+    | Le - Dužina izlaza mlaznika        | `{le_rpa} mm`                 | Placeholder          | Placeholder              | Placeholder            |
     """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
     main()
+

@@ -53,7 +53,7 @@ sve najbolje u Novoj godini. Ovo su odgovori na tvoja pitanja:
 U tvom analitickom racunu se razlikuje ulazni parametar odnos precnika komore i grla mlaznika
 
 u odnosu na RPA: u RPA ulaz je odnos preseka, a kod tebe je odnos precnika
-... pa ti je zato razlicit precnik i duzina komore u odnosu na RPA.
+pa ti je zato razlicit precnik i duzina komore u odnosu na RPA.
 
 Pozdrav
 
