@@ -379,6 +379,9 @@ Le/c15  =  102.33 % (relative to length of cone nozzle with Te=15 deg)
     Akr_sci = format_scientific_latex(Akr)
     st.markdown(f'> $ A_{{kr}} = {Akr_sci} \\, m^2 $')
     
+    # Akr = 0.00070519
+    st.warning(f'**Akr = {Akr:.8f} m^2**')
+    
     spacer()
 
     # mass flow rates ==============================
@@ -620,6 +623,7 @@ Mi_solution = {Mi_solution[0]:.4f}
     st.markdown(r'''
         $$ F_{opt} = (m_{ox} + m_{g}) \cdot V_{iopt} $$
     ''')
+    st.code(Fopt)
     st.markdown(f'''
         $ F_{{opt}} = ({mox:.3f} + {mg:.3f}) \cdot {Vi_opt:.3f} = {Fopt:.3f} \\, \\text{{N}} $
     ''')
@@ -694,7 +698,6 @@ Mi_solution = {Mi_solution[0]:.4f}
     | Dt - Prečnik grla mlaznika         | `{dt_rpa} mm`                 | `{dkr*1000:.3f} mm`  | `{(dt_rpa-dkr*1000):.3f}`| `{((dt_rpa - dkr*1000) / (dkr*1000) * 100):.2f}%`|
     | De - Izlazni prečnik (presek)      | `{de_rpa} mm`                 | `{diopt*1000:.3f} mm`   | `{(de_rpa-di*1000):.3f}` | `{((de_rpa - di*1000) / (di*1000) * 100):.2f}%` |
     | Lc - Dužina komore                 | `{lc_rpa} mm`                 | `{lk*1000:.3f} mm`   | `{(lc_rpa-lk*1000):.3f}` | `{((lc_rpa - lk*1000) / (lk*1000) * 100):.2f}%` |
-    | Le - Dužina izlaza mlaznika        | `{le_rpa} mm`                 | Placeholder          | Placeholder              | Placeholder            |
     """, unsafe_allow_html=True)
 
 
